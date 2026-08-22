@@ -7,7 +7,6 @@ from pathlib import Path
 
 from vesi.core.snapshot import SnapshotManager
 from vesi.errors.exceptions import (
-    FileNotTrackedError,
     RepositoryNotFoundError,
     VersionNotFoundError,
     VesiError,
@@ -15,6 +14,30 @@ from vesi.errors.exceptions import (
 from vesi.parser.parser import ParsedCommand
 from vesi.repository.repository import Repository
 from vesi.utils.platform import confirm, print_color
+
+
+def _resolve_version(repo: Repository, version_id: str) -> str:
+    """Resolve a version ID (short hash) to full hash."""
+    snapshot_mgr = SnapshotManager(repo)
+
+    # Try as full hash first
+    if repo.objects.exists(version_id):
+        return version_id
+
+    # Try to find by short hash prefix
+    head_hash = repo.get_head_commit()
+    if head_hash:
+        current = head_hash
+        while current:
+            if current.startswith(version_id):
+                return current
+            try:
+                data = snapshot_mgr.load_snapshot(current)
+                current = data.get("parent")
+            except Exception:
+                break
+
+    raise VersionNotFoundError(version_id)
 
 
 def cmd_pulihkan(
@@ -160,26 +183,3 @@ def cmd_batalkan_perubahan(
 
     print_color(f"✓ Perubahan pada '{filepath}' dibatalkan.", "green")
     return 0
-
-
-def _resolve_version(repo: Repository, version_id: str) -> str:
-    """Resolve a version ID to full hash."""
-    # Try as full hash first
-    if repo.objects.exists(version_id):
-        return version_id
-
-    # Walk history to find matching short hash
-    snapshot_mgr = SnapshotManager(repo)
-    head_hash = repo.get_head_commit()
-    if head_hash:
-        current = head_hash
-        while current:
-            if current.startswith(version_id):
-                return current
-            try:
-                data = snapshot_mgr.load_snapshot(current)
-                current = data.get("parent")
-            except Exception:
-                break
-
-    raise VersionNotFoundError(version_id)

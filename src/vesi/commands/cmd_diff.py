@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 from vesi.core.snapshot import SnapshotManager
 from vesi.diff.engine import (
-    diff_files,
     diff_working_vs_snapshot,
     diff_between_trees,
     format_diff_header,
@@ -15,8 +17,8 @@ from vesi.errors.exceptions import (
     VesiError,
 )
 from vesi.parser.parser import ParsedCommand
+from vesi.repository.ignore import load_ignore_patterns, is_ignored
 from vesi.repository.repository import Repository
-from vesi.storage.blob import BlobStore
 from vesi.utils.paths import is_binary_file
 
 
@@ -106,18 +108,14 @@ def _diff_working_vs_last(
             diffs_found = True
 
     # Check for new files in working directory
-    import os
-    from vesi.repository.ignore import load_ignore_patterns, is_ignored
-    from vesi.hashing import hash_file
-
     ignore_patterns = load_ignore_patterns(repo.root)
     tracked_paths = {e.path for e in tree.get_blob_entries()}
 
-    for root, dirs, files in os.walk(repo.root):
+    for root_dir, dirs, files in os.walk(repo.root):
         dirs[:] = [d for d in dirs if d != ".vesi"]
 
         for filename in files:
-            file_path = __import__("pathlib").Path(root) / filename
+            file_path = Path(root_dir) / filename
             rel_path = str(file_path.relative_to(repo.root))
 
             if rel_path in tracked_paths or is_ignored(rel_path, ignore_patterns):
@@ -125,7 +123,6 @@ def _diff_working_vs_last(
 
             if not is_binary_file(file_path):
                 try:
-                    content = file_path.read_bytes()
                     diff = diff_working_vs_snapshot(repo.root, rel_path, None)
                     if diff:
                         print(diff)

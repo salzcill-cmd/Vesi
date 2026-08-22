@@ -7,31 +7,16 @@ dan project ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 
 ## [Unreleased]
 
-### Added
-- Unit tests untuk parser (90 tests)
-- Unit tests untuk commands (33 tests)
-- Integration tests untuk workflow (12 tests)
-- GitHub Actions CI/CD workflows
-- README.md dengan dokumentasi lengkap
-- CONTRIBUTING.md untuk kontributor
-- CHANGELOG.md ini
-- Issue templates (bug report, feature request)
-- PR template
-
-### Changed
-- Syntax lebih natural dengan shortcuts:
-  - `vesi status` = `lihat perubahan`
-  - `vesi riwayat` = `lihat riwayat`
-  - `vesi cabang baru <nama>` = `buat cabang <nama>`
-  - `vesi cabang pindah <nama>` = `pindah cabang <nama>`
-  - `vesi cabang hapus <nama>` = `hapus cabang <nama>`
-- Help text dengan format box-drawing characters
-- Welcome message lebih informatif
+## [0.1.1] - 2026-08-22
 
 ### Fixed
-- Parser untuk `batalkan gabungan` vs `batalkan perubahan`
-- Router untuk subcommand routing
-- Blob storage saat staging file
+- Remove unused imports in `cmd_diff.py`
+- Remove duplicate `_resolve_version` function in `cmd_restore.py`
+- Clean up `__import__("pathlib")` usage in diff command
+- Fix import organization in `cmd_diff.py`
+
+### Changed
+- Improved code cleanliness and maintainability
 
 ## [0.1.0] - 2026-08-22
 
@@ -58,7 +43,7 @@ dan project ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 - `cek` - Integrity check
 - `konfigurasi` - Config management
 - `bantuan` - Help system
-- `jelaskan` - Educational explanations (16 concepts)
+- `jelaskan` - Educational explanations (22 concepts)
 
 #### Infrastructure
 - Content-addressed object storage
@@ -74,10 +59,28 @@ dan project ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 - `--json` - JSON output for AI agents
 - Color support with `--no-color` fallback
 
+#### Natural Syntax
+- `vesi status` = `lihat perubahan`
+- `vesi riwayat` = `lihat riwayat`
+- `vesi log` = `lihat riwayat`
+- `vesi cabang baru <nama>` = `buat cabang <nama>`
+- `vesi cabang pindah <nama>` = `pindah cabang <nama>`
+- `vesi cabang hapus <nama>` = `hapus cabang <nama>`
+- `vesi batal <file>` = `batalkan perubahan`
+- English shortcuts: `add`, `save`, `commit`, `diff`, `restore`
+
+#### Testing
+- Unit tests (90 parser + 33 commands)
+- Integration tests (12 workflows)
+- E2E tests (24 CLI subprocess)
+
 ### Documentation
-- Comprehensive help for all commands
-- Educational content via `jelaskan` command
-- Error messages with hints and suggestions
+- README.md dengan dokumentasi lengkap
+- CONTRIBUTING.md untuk kontributor
+- CHANGELOG.md ini
+- Issue templates (bug report, feature request)
+- PR template
+- GitHub Actions CI/CD workflows
 
 ---
 
