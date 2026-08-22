@@ -22,6 +22,9 @@ from vesi.commands.cmd_config import cmd_konfigurasi
 from vesi.commands.cmd_help import cmd_bantuan
 from vesi.commands.cmd_explain import cmd_jelaskan
 from vesi.commands.cmd_tag import cmd_beri_tag, cmd_lihat_tag, cmd_hapus_tag
+from vesi.commands.cmd_show import cmd_isi
+from vesi.commands.cmd_search import cmd_cari
+from vesi.commands.cmd_amend import cmd_simpan_amend
 from vesi.errors.exceptions import InvalidCommandError
 from vesi.parser.parser import ParsedCommand
 
@@ -35,15 +38,26 @@ def cmd_beri(
     """Handle 'beri tag' command."""
     if parsed.subcommand == "tag":
         return cmd_beri_tag(parsed, verbose=verbose, debug=debug)
-    # Default: treat as beri tag
     return cmd_beri_tag(parsed, verbose=verbose, debug=debug)
+
+
+def cmd_simpan_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle simpan command with --amend flag."""
+    if "--amend" in parsed.flags:
+        return cmd_simpan_amend(parsed, verbose=verbose, debug=debug)
+    return cmd_simpan_versi(parsed, verbose=verbose, debug=debug)
 
 
 # Map of verb -> handler function (for simple commands)
 COMMANDS: dict[str, callable] = {
     "mulai": cmd_mulai_proyek,
     "stel": cmd_stel,
-    "simpan": cmd_simpan_versi,
+    "simpan": cmd_simpan_handler,
     "bandingkan": cmd_bandingkan,
     "pulihkan": cmd_pulihkan,
     "cek": cmd_cek,
@@ -52,6 +66,8 @@ COMMANDS: dict[str, callable] = {
     "jelaskan": cmd_jelaskan,
     "gabungkan": cmd_gabungkan,
     "beri": cmd_beri,
+    "isi": cmd_isi,
+    "cari": cmd_cari,
 }
 
 # Map of verb+subcommand -> handler function
@@ -93,6 +109,11 @@ SUGGESTIONS: dict[str, str] = {
     "explain": "jelaskan",
     "check": "cek",
     "config": "konfigurasi",
+    "show": "isi",
+    "cat": "isi",
+    "search": "cari",
+    "grep": "cari",
+    "find": "cari",
 }
 
 

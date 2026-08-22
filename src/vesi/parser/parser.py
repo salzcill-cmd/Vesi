@@ -96,6 +96,14 @@ VERB_ALIASES: dict[str, str] = {
     "beri": "beri",
     "tag": "beri",
     "label": "beri",
+    "isi": "isi",
+    "show": "isi",
+    "cat": "isi",
+    "tampilkan": "isi",
+    "cari": "cari",
+    "search": "cari",
+    "grep": "cari",
+    "find": "cari",
 }
 
 # Subcommand aliases: (verb, sub) -> canonical (verb, sub)
@@ -264,6 +272,10 @@ def parse_command(input_text: str) -> ParsedCommand:
         _parse_lanjutkan(cmd, regular_tokens[1:])
     elif verb == "beri":
         _parse_beri(cmd, regular_tokens[1:])
+    elif verb == "isi":
+        _parse_isi(cmd, regular_tokens[1:])
+    elif verb == "cari":
+        _parse_cari(cmd, regular_tokens[1:])
     else:
         cmd.args = [t.value for t in regular_tokens[1:]]
 
@@ -443,3 +455,33 @@ def _parse_beri(cmd: ParsedCommand, tokens: list[Token]) -> None:
         else:
             cmd.subcommand = "tag"
             cmd.args = [t.value for t in tokens]
+
+
+def _parse_isi(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: isi <file> [dari <versi>]"""
+    i = 0
+    while i < len(tokens):
+        val = tokens[i].value.lower()
+        if val in ("dari", "from"):
+            i += 1
+            if i < len(tokens):
+                cmd.options["from"] = tokens[i].value
+            i += 1
+        else:
+            cmd.args.append(tokens[i].value)
+            i += 1
+
+
+def _parse_cari(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: cari <pola> [di <folder>]"""
+    i = 0
+    while i < len(tokens):
+        val = tokens[i].value.lower()
+        if val in ("di", "in"):
+            i += 1
+            if i < len(tokens):
+                cmd.options["di"] = tokens[i].value
+            i += 1
+        else:
+            cmd.args.append(tokens[i].value)
+            i += 1

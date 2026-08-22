@@ -7,6 +7,28 @@ dan project ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-22
+
+### Added
+- **Show Command** (`isi`) - Tampilkan isi file dari versi tertentu
+  - `vesi isi <file>` - Tampilkan isi file dari versi terakhir
+  - `vesi isi <file> dari v1.0.0` - Tampilkan isi file dari versi tertentu
+  - `vesi isi --verbose <file>` - Tampilkan dengan nomor baris
+
+- **Search Command** (`cari`) - Cari pola di dalam file
+  - `vesi cari <pola>` - Cari di semua file
+  - `vesi cari <pola> di src/` - Cari di folder tertentu
+  - Support regex patterns
+  - Highlight kecocokan
+
+- **Amend Command** - Ubah commit terakhir
+  - `vesi simpan --amend "pesan baru"` - Ubah pesan commit terakhir
+  - `vesi simpan --amend` - Tambah file staged ke commit terakhir
+
+### Changed
+- Parser extended to support new commands
+- Router updated with new command handlers
+
 ## [0.2.0] - 2026-08-22
 
 ### Added
@@ -15,17 +37,12 @@ dan project ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
   - `lihat tag` atau `tag` - Lihat semua tag
   - `hapus tag v1.0.0` - Hapus tag
 
-### Changed
-- Parser extended to support tag commands
-- Router updated with tag command handlers
-
 ## [0.1.1] - 2026-08-22
 
 ### Fixed
 - Remove unused imports in `cmd_diff.py`
 - Remove duplicate `_resolve_version` function in `cmd_restore.py`
 - Clean up `__import__("pathlib")` usage in diff command
-- Fix import organization in `cmd_diff.py`
 
 ## [0.1.0] - 2026-08-22
 
@@ -106,7 +123,8 @@ Kami menggunakan [Semantic Versioning](https://semver.org/lang/id/):
 ```
 0.1.0  →  0.1.1  (patch: bug fix)
 0.1.1  →  0.2.0  (minor: fitur baru)
-0.2.0  →  1.0.0  (major: breaking changes)
+0.2.0  →  0.3.0  (minor: fitur baru)
+0.3.0  →  1.0.0  (major: breaking changes)
 ```
 
 ---
