@@ -1,0 +1,84 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vesi-vcs"
+version = "0.1.0"
+description = "Version control yang gampang dipelajari - Easy to learn, serious to use"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    {name = "Vesi Contributors"},
+]
+keywords = ["vcs", "version-control", "cli", "indonesia", "beginner-friendly"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Education",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Version Control",
+    "Topic :: Education",
+    "Natural Language :: Indonesian",
+]
+urls = [
+    {name = "Homepage", url = "https://github.com/username/vesi"},
+    {name = "Documentation", url = "https://github.com/username/vesi#readme"},
+    {name = "Repository", url = "https://github.com/username/vesi"},
+    {name = "Bug Tracker", url = "https://github.com/username/vesi/issues"},
+]
+
+[project.scripts]
+vesi = "vesi.cli.app:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vesi"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "e2e: End-to-end tests",
+]
+addopts = "-v --tb=short"
+
+[tool.coverage.run]
+source = ["vesi"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.",
+    "pass",
+    "except ImportError",
+]

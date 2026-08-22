@@ -1,0 +1,110 @@
+"""Command router - dispatch parsed commands to handlers."""
+
+from __future__ import annotations
+
+from vesi.commands.cmd_init import cmd_mulai_proyek
+from vesi.commands.cmd_status import cmd_lihat_perubahan
+from vesi.commands.cmd_stage import cmd_stel
+from vesi.commands.cmd_commit import cmd_simpan_versi
+from vesi.commands.cmd_log import cmd_lihat_riwayat
+from vesi.commands.cmd_diff import cmd_bandingkan
+from vesi.commands.cmd_restore import cmd_pulihkan, cmd_batalkan_perubahan
+from vesi.commands.cmd_branch import (
+    cmd_buat_cabang,
+    cmd_lihat_cabang,
+    cmd_pindah_cabang,
+    cmd_hapus_cabang,
+)
+from vesi.commands.cmd_merge import cmd_gabungkan
+from vesi.commands.cmd_merge_abort import cmd_lanjutkan_gabungan, cmd_batalkan_gabungan
+from vesi.commands.cmd_check import cmd_cek
+from vesi.commands.cmd_config import cmd_konfigurasi
+from vesi.commands.cmd_help import cmd_bantuan
+from vesi.commands.cmd_explain import cmd_jelaskan
+from vesi.errors.exceptions import InvalidCommandError
+from vesi.parser.parser import ParsedCommand
+
+
+# Map of verb -> handler function (for simple commands)
+COMMANDS: dict[str, callable] = {
+    "mulai": cmd_mulai_proyek,
+    "stel": cmd_stel,
+    "simpan": cmd_simpan_versi,
+    "bandingkan": cmd_bandingkan,
+    "pulihkan": cmd_pulihkan,
+    "cek": cmd_cek,
+    "konfigurasi": cmd_konfigurasi,
+    "bantuan": cmd_bantuan,
+    "jelaskan": cmd_jelaskan,
+    "gabungkan": cmd_gabungkan,
+}
+
+# Map of verb+subcommand -> handler function
+SUBCOMMANDS: dict[tuple[str, str], callable] = {
+    ("lihat", "perubahan"): cmd_lihat_perubahan,
+    ("lihat", "riwayat"): cmd_lihat_riwayat,
+    ("lihat", "cabang"): cmd_lihat_cabang,
+    ("buat", "cabang"): cmd_buat_cabang,
+    ("pindah", "cabang"): cmd_pindah_cabang,
+    ("hapus", "cabang"): cmd_hapus_cabang,
+    ("batalkan", "perubahan"): cmd_batalkan_perubahan,
+    ("batalkan", "gabungan"): cmd_batalkan_gabungan,
+    ("lanjutkan", "gabungan"): cmd_lanjutkan_gabungan,
+}
+
+# Suggestion map for similar commands
+SUGGESTIONS: dict[str, str] = {
+    "mulai": "mulai proyek",
+    "init": "mulai proyek",
+    "status": "lihat perubahan",
+    "add": "stel",
+    "stage": "stel",
+    "commit": "simpan versi",
+    "save": "simpan versi",
+    "log": "lihat riwayat",
+    "history": "lihat riwayat",
+    "riwayat": "lihat riwayat",
+    "diff": "bandingkan",
+    "restore": "pulihkan",
+    "checkout": "pindah cabang",
+    "branch": "lihat cabang",
+    "cabang": "lihat cabang",
+    "merge": "gabungkan",
+    "gabung": "gabungkan",
+    "help": "bantuan",
+    "explain": "jelaskan",
+    "check": "cek",
+    "config": "konfigurasi",
+}
+
+
+def route_command(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Route a parsed command to its handler.
+
+    Returns exit code.
+    """
+    verb = parsed.verb
+
+    if not verb:
+        raise InvalidCommandError(parsed.raw or "(empty)")
+
+    # Try subcommand routing first
+    if parsed.subcommand:
+        subcommand_key = (verb, parsed.subcommand)
+        handler = SUBCOMMANDS.get(subcommand_key)
+        if handler:
+            return handler(parsed, verbose=verbose, debug=debug)
+
+    # Try simple command routing
+    handler = COMMANDS.get(verb)
+    if handler:
+        return handler(parsed, verbose=verbose, debug=debug)
+
+    # Unknown command
+    suggestion = SUGGESTIONS.get(verb)
+    raise InvalidCommandError(verb, suggestion=suggestion)
