@@ -7,6 +7,18 @@ dan project ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-22
+
+### Added
+- **Tag System** - Tandai versi penting dengan tag
+  - `beri tag v1.0.0 "Rilis pertama"` - Buat tag
+  - `lihat tag` atau `tag` - Lihat semua tag
+  - `hapus tag v1.0.0` - Hapus tag
+
+### Changed
+- Parser extended to support tag commands
+- Router updated with tag command handlers
+
 ## [0.1.1] - 2026-08-22
 
 ### Fixed
@@ -14,9 +26,6 @@ dan project ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 - Remove duplicate `_resolve_version` function in `cmd_restore.py`
 - Clean up `__import__("pathlib")` usage in diff command
 - Fix import organization in `cmd_diff.py`
-
-### Changed
-- Improved code cleanliness and maintainability
 
 ## [0.1.0] - 2026-08-22
 

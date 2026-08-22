@@ -44,6 +44,8 @@ SINGLE_WORD_ALIASES: dict[str, tuple[str, str]] = {
     "cabang": ("lihat", "cabang"),
     "branch": ("lihat", "cabang"),
     "branches": ("lihat", "cabang"),
+    "tag": ("lihat", "tag"),
+    "tags": ("lihat", "tag"),
     "bantuan": ("bantuan", ""),
     "help": ("bantuan", ""),
     "?": ("bantuan", ""),
@@ -91,6 +93,9 @@ VERB_ALIASES: dict[str, str] = {
     "jelaskan": "jelaskan",
     "explain": "jelaskan",
     "apa": "jelaskan",
+    "beri": "beri",
+    "tag": "beri",
+    "label": "beri",
 }
 
 # Subcommand aliases: (verb, sub) -> canonical (verb, sub)
@@ -257,6 +262,8 @@ def parse_command(input_text: str) -> ParsedCommand:
         _parse_konfigurasi(cmd, regular_tokens[1:])
     elif verb == "lanjutkan":
         _parse_lanjutkan(cmd, regular_tokens[1:])
+    elif verb == "beri":
+        _parse_beri(cmd, regular_tokens[1:])
     else:
         cmd.args = [t.value for t in regular_tokens[1:]]
 
@@ -424,3 +431,15 @@ def _parse_lanjutkan(cmd: ParsedCommand, tokens: list[Token]) -> None:
     """Parse: lanjutkan gabungan"""
     if tokens:
         cmd.subcommand = tokens[0].value.lower()
+
+
+def _parse_beri(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: beri tag <nama> [pesan]"""
+    if tokens:
+        sub = tokens[0].value.lower()
+        if sub in ("tag", "label"):
+            cmd.subcommand = "tag"
+            cmd.args = [t.value for t in tokens[1:]]
+        else:
+            cmd.subcommand = "tag"
+            cmd.args = [t.value for t in tokens]

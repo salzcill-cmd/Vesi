@@ -21,8 +21,22 @@ from vesi.commands.cmd_check import cmd_cek
 from vesi.commands.cmd_config import cmd_konfigurasi
 from vesi.commands.cmd_help import cmd_bantuan
 from vesi.commands.cmd_explain import cmd_jelaskan
+from vesi.commands.cmd_tag import cmd_beri_tag, cmd_lihat_tag, cmd_hapus_tag
 from vesi.errors.exceptions import InvalidCommandError
 from vesi.parser.parser import ParsedCommand
+
+
+def cmd_beri(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle 'beri tag' command."""
+    if parsed.subcommand == "tag":
+        return cmd_beri_tag(parsed, verbose=verbose, debug=debug)
+    # Default: treat as beri tag
+    return cmd_beri_tag(parsed, verbose=verbose, debug=debug)
 
 
 # Map of verb -> handler function (for simple commands)
@@ -37,6 +51,7 @@ COMMANDS: dict[str, callable] = {
     "bantuan": cmd_bantuan,
     "jelaskan": cmd_jelaskan,
     "gabungkan": cmd_gabungkan,
+    "beri": cmd_beri,
 }
 
 # Map of verb+subcommand -> handler function
@@ -44,9 +59,11 @@ SUBCOMMANDS: dict[tuple[str, str], callable] = {
     ("lihat", "perubahan"): cmd_lihat_perubahan,
     ("lihat", "riwayat"): cmd_lihat_riwayat,
     ("lihat", "cabang"): cmd_lihat_cabang,
+    ("lihat", "tag"): cmd_lihat_tag,
     ("buat", "cabang"): cmd_buat_cabang,
     ("pindah", "cabang"): cmd_pindah_cabang,
     ("hapus", "cabang"): cmd_hapus_cabang,
+    ("hapus", "tag"): cmd_hapus_tag,
     ("batalkan", "perubahan"): cmd_batalkan_perubahan,
     ("batalkan", "gabungan"): cmd_batalkan_gabungan,
     ("lanjutkan", "gabungan"): cmd_lanjutkan_gabungan,
@@ -69,6 +86,7 @@ SUGGESTIONS: dict[str, str] = {
     "checkout": "pindah cabang",
     "branch": "lihat cabang",
     "cabang": "lihat cabang",
+    "tag": "lihat tag",
     "merge": "gabungkan",
     "gabung": "gabungkan",
     "help": "bantuan",
