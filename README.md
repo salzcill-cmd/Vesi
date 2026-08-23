@@ -311,6 +311,8 @@ project/
 ## Kenapa Bahasa Indonesia?
 
 > "Gue udah 3 bulan belajar Git, tapi masih bingung bedanya `git add`, `git commit`, `git push`. Bukannya gitu aja ya?"
+>
+> — Author vesi, yang masih push & commit pake AI sampe sekarang.. 🤷
 
 **Kami denger.**
 
