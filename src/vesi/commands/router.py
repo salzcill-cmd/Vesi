@@ -38,6 +38,13 @@ from vesi.commands.cmd_bisect import cmd_bagi_cari
 from vesi.commands.cmd_reflog import cmd_jejak
 from vesi.commands.cmd_worktree import cmd_folder_kerja
 from vesi.commands.cmd_undo import cmd_batalkan_versi
+from vesi.commands.cmd_interactive import cmd_simpan_interaktif
+from vesi.commands.cmd_stats import cmd_statistik
+from vesi.commands.cmd_autosave import cmd_auto_simpan
+from vesi.commands.cmd_export import cmd_ekspor, cmd_impor
+from vesi.commands.cmd_aliases import cmd_alias
+from vesi.commands.cmd_lock import cmd_kunci_file
+from vesi.commands.cmd_merge_assistant import cmd_asisten_gabung
 from vesi.commands.cmd_search_history import cmd_cari_riwayat
 from vesi.commands.cmd_backup import cmd_cadangan
 from vesi.commands.cmd_insights import cmd_lihat_file
@@ -152,6 +159,13 @@ COMMANDS: dict[str, callable] = {
     "cadangan": cmd_cadangan,
     "pola": cmd_pola_handler,
     "bantu": cmd_bantu_handler,
+    "statistik": cmd_statistik,
+    "auto": cmd_auto_simpan,
+    "ekspor": cmd_ekspor,
+    "impor": cmd_impor,
+    "alias": cmd_alias,
+    "kunci": cmd_kunci_file,
+    "asisten": cmd_asisten_gabung,
 }
 
 # Map of verb+subcommand -> handler function
@@ -188,6 +202,20 @@ SUBCOMMANDS: dict[tuple[str, str], callable] = {
     ("folder", "buat"): cmd_folder_kerja,
     ("folder", "hapus"): cmd_folder_kerja,
     ("folder", "list"): cmd_folder_kerja,
+    # New advanced commands
+    ("simpan", "interaktif"): cmd_simpan_interaktif,
+    ("simpan", "wizard"): cmd_simpan_interaktif,
+    ("auto", "simpan"): cmd_auto_simpan,
+    ("auto", "aktifkan"): cmd_auto_simpan,
+    ("auto", "nonaktifkan"): cmd_auto_simpan,
+    ("auto", "status"): cmd_auto_simpan,
+    ("alias", "tambah"): cmd_alias,
+    ("alias", "hapus"): cmd_alias,
+    ("alias", "list"): cmd_alias,
+    ("kunci", "file"): cmd_kunci_file,
+    ("kunci", "buka"): cmd_kunci_file,
+    ("kunci", "status"): cmd_kunci_file,
+    ("asisten", "gabung"): cmd_asisten_gabung,
 }
 
 # Suggestion map for similar commands

@@ -139,6 +139,22 @@ VERB_ALIASES: dict[str, str] = {
     "smart": "bandingkan pintar",
     "bantu": "bantu",
     "help": "bantu",
+    # Advanced features
+    "wizard": "simpan interaktif",
+    "statistik": "statistik",
+    "stats": "statistik",
+    "auto": "auto",
+    "autosave": "auto",
+    "ekspor": "ekspor",
+    "export": "ekspor",
+    "impor": "impor",
+    "import": "impor",
+    "alias": "alias",
+    "aliases": "alias",
+    "kunci": "kunci",
+    "lock": "kunci",
+    "asisten": "asisten",
+    "assistant": "asisten",
 }
 
 # Subcommand aliases: (verb, sub) -> canonical (verb, sub)
@@ -350,6 +366,8 @@ def parse_command(input_text: str) -> ParsedCommand:
         _parse_ambil(cmd, regular_tokens[1:])
     elif verb == "siapa":
         _parse_siapa(cmd, regular_tokens[1:])
+    elif verb == "kunci":
+        _parse_kunci(cmd, regular_tokens[1:])
     elif verb == "bagi":
         _parse_bagi(cmd, regular_tokens[1:])
     elif verb == "jejak":
@@ -711,3 +729,22 @@ def _parse_folder(cmd: ParsedCommand, tokens: list[Token]) -> None:
         }
         cmd.subcommand = action_map.get(sub, sub)
         cmd.args = [t.value for t in tokens[1:]]
+
+
+def _parse_kunci(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: kunci file <file> | kunci buka <file> | kunci status <file>"""
+    if not tokens:
+        cmd.subcommand = "list"
+        return
+
+    sub = tokens[0].value.lower()
+    sub_map = {
+        "file": "file",
+        "lock": "file",
+        "buka": "buka",
+        "unlock": "buka",
+        "status": "status",
+        "cek": "status",
+    }
+    cmd.subcommand = sub_map.get(sub, sub)
+    cmd.args = [t.value for t in tokens[1:]]
