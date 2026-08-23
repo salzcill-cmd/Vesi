@@ -21,7 +21,7 @@
 
 ```bash
 # Clone repository
-git clone https://github.com/username/vesi.git
+git clone https://github.com/salzcill-cmd/vesi.git
 cd vesi
 
 # Install dalam mode development

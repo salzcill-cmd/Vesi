@@ -454,13 +454,20 @@ def _parse_pindah(cmd: ParsedCommand, tokens: list[Token]) -> None:
 
 
 def _parse_hapus(cmd: ParsedCommand, tokens: list[Token]) -> None:
-    """Parse: hapus cabang <nama>"""
+    """Parse: hapus cabang <nama> | hapus tag <nama> | hapus stash"""
     if tokens:
         sub = tokens[0].value.lower()
         if sub in ("cabang", "branch"):
             cmd.subcommand = "cabang"
             cmd.args = [t.value for t in tokens[1:]]
+        elif sub in ("tag", "label"):
+            cmd.subcommand = "tag"
+            cmd.args = [t.value for t in tokens[1:]]
+        elif sub in ("stash",):
+            cmd.subcommand = "stash"
+            cmd.args = [t.value for t in tokens[1:]]
         else:
+            # Default: treat as cabang with the first token as the branch name
             cmd.subcommand = "cabang"
             cmd.args = [t.value for t in tokens]
 
