@@ -119,6 +119,114 @@ CONTOH:
     jelaskan versi
     jelaskan cabang
     jelaskan konflik""",
+    # Tag commands
+    "beri": (
+        "NAMA: beri tag\n"
+        "TUJUAN: Memberi tag pada versi tertentu\n"
+        "SINTAKS: beri tag <nama> [pesan]\n"
+        "CONTOH:\n"
+        "    beri tag v1.0.0\n"
+        '    beri tag v1.0.0 "Rilis pertama"'
+    ),
+    "tag": """NAMA: lihat tag
+TUJUAN: Menampilkan daftar tag
+SINTAKS: lihat tag | tag""",
+    # Stash commands
+    "simpan": (
+        "NAMA: simpan versi\n"
+        "TUJUAN: Menyimpan snapshot dari file yang di-stage\n"
+        'SINTAKS: simpan "pesan" | simpan versi "pesan"\n'
+        "ALIAS: save, commit\n\n"
+        "Sub-perintah:\n"
+        '  simpan "pesan"          Simpan versi (commit)\n'
+        "  simpan --amend          Ubah commit terakhir\n"
+        "  simpan sementara        Simpan perubahan sementara (stash)\n\n"
+        "CONTOH:\n"
+        '    simpan "halaman login selesai"\n'
+        '    simpan versi "tugas matematika awal"\n'
+        '    simpan sementara "perubahan sementara"'
+    ),
+    "ambil": """NAMA: ambil
+TUJUAN: Mengambil stash atau commit tertentu
+
+Sub-perintah:
+  ambil stash             Ambil stash terakhir (pop)
+  ambil versi <commit>    Cherry-pick commit tertentu
+
+CONTOH:
+    ambil stash
+    ambil versi a1b2c3d""",
+    "lihat": """NAMA: lihat
+TUJUAN: Melihat informasi tentang repository
+
+Sub-perintah:
+  lihat perubahan    Lihat file yang berubah (= status)
+  lihat riwayat      Lihat daftar versi (= riwayat, log)
+  lihat cabang       Lihat semua cabang (= cabang)
+  lihat tag          Lihat semua tag
+  lihat stash        Lihat stash tersimpan
+
+CONTOH:
+    lihat perubahan
+    lihat riwayat
+    lihat riwayat 20
+    lihat cabang
+    lihat tag
+    lihat stash""",
+    # Rebase command
+    "susun": """NAMA: susun ulang
+TUJUAN: Menyatukan beberapa commit menjadi satu (rebase/squash)
+SINTAKS: susun ulang [jumlah]
+ALIAS: rebase, squash
+CONTOH:
+    susun ulang          Gabungkan 2 commit terakhir
+    susun ulang 3        Gabungkan 3 commit terakhir""",
+    # Blame command
+    "siapa": """NAMA: siapa ubah
+TUJUAN: Melihat siapa yang mengubah setiap baris kode (blame)
+SINTAKS: siapa ubah <file>
+ALIAS: blame, annotate
+CONTOH:
+    siapa ubah main.py""",
+    # Bisect command
+    "bagi": """NAMA: bagi cari
+TUJUAN: Mencari commit yang menyebabkan bug (bisect)
+SINTAKS: bagi cari [mulai|baik|buruk|selesai]
+ALIAS: bisect
+
+Sub-perintah:
+  bagi cari mulai <baik> <buruk>   Mulai sesi bisect
+  bagi cari baik                   Tandai commit saat ini baik
+  bagi cari buruk                  Tandai commit saat ini buruk
+  bagi cari selesai                Akhiri sesi bisect
+
+CONTOH:
+    bagi cari mulai a1b2c3d f4e5d6a
+    bagi cari baik
+    bagi cari buruk""",
+    # Reflog command
+    "jejak": """NAMA: jejak
+TUJUAN: Menampilkan riwayat pergerakan HEAD (reflog)
+SINTAKS: jejak [jumlah]
+ALIAS: reflog
+CONTOH:
+    jejak              Tampilkan semua jejak
+    jejak 20           Tampilkan 20 jejak terakhir""",
+    # Worktree command
+    "folder": """NAMA: folder kerja
+TUJUAN: Mengelola worktree (checkout branch di folder berbeda)
+SINTAKS: folder kerja [buat|hapus] <path> <branch>
+ALIAS: worktree
+
+Sub-perintah:
+  folder kerja                      Lihat semua worktree
+  folder kerja buat <path> <branch> Buat worktree baru
+  folder kerja hapus <path>         Hapus worktree
+
+CONTOH:
+    folder kerja buat ../project-v2 fitur-baru
+    folder kerja
+    folder kerja hapus ../project-v2""",
 }
 
 
@@ -157,21 +265,34 @@ def cmd_bantuan(
     print("  mulai [proyek]          Buat repository baru")
     print("  status                  Lihat file yang berubah")
     print("  cek                     Periksa integritas repository")
-    print("  konfigurasi             Kelola pengaturan\n")
+    print("  konfigurasi             Kelola pengaturan")
+    print("  jejak                   Riwayat pergerakan HEAD\n")
     print("  ── Menyimpan ──")
     print("  stel <file>             Siapkan file (= siap, add)")
     print('  simpan "pesan"          Simpan versi (= save, commit)')
+    print("  simpan sementara        Simpan perubahan sementara (stash)")
     print("  riwayat                 Lihat daftar versi (= log)")
     print("  bandingkan              Lihat perbedaan (= diff)\n")
     print("  ── Memulihkan ──")
     print("  pulihkan <file>         Kembalikan file (= restore)")
-    print("  batal <file>            Batalkan perubahan (= undo)\n")
+    print("  batal <file>            Batalkan perubahan (= undo)")
+    print("  ambil stash             Ambil stash tersimpan")
+    print("  ambil versi <commit>    Cherry-pick commit\n")
     print("  ── Cabang ──")
     print("  cabang baru <nama>      Buat cabang baru")
     print("  cabang                  Lihat semua cabang")
     print("  cabang pindah <nama>    Pindah ke cabang lain")
     print("  cabang hapus <nama>     Hapus cabang")
-    print("  gabung <nama>           Gabungkan cabang\n")
+    print("  gabung <nama>           Gabungkan cabang")
+    print("  folder kerja             Kelola worktree\n")
+    print("  ── Tag ──")
+    print("  beri tag <nama>         Tandai versi penting")
+    print("  lihat tag               Lihat semua tag")
+    print("  hapus tag <nama>        Hapus tag\n")
+    print("  ── Analisis ──")
+    print("  siapa ubah <file>       Lihat siapa ubah baris (blame)")
+    print("  bagi cari               Cari commit bug (bisect)")
+    print("  susun ulang             Gabungkan commit (rebase)\n")
     print("  ── Lainnya ──")
     print("  bantuan                 Tampilkan bantuan ini (= help)")
     print("  jelaskan <konsep>       Pelajari konsep (= explain)\n")
