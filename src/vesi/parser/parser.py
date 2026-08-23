@@ -38,9 +38,12 @@ class ParsedCommand:
 SINGLE_WORD_ALIASES: dict[str, tuple[str, str]] = {
     "status": ("lihat", "perubahan"),
     "changes": ("lihat", "perubahan"),
+    "pp": ("lihat", "perubahan"),
     "riwayat": ("lihat", "riwayat"),
     "log": ("lihat", "riwayat"),
     "history": ("lihat", "riwayat"),
+    "brp": ("lihat", "riwayat"),
+    "kemana": ("lihat", "riwayat"),
     "cabang": ("lihat", "cabang"),
     "branch": ("lihat", "cabang"),
     "branches": ("lihat", "cabang"),
@@ -53,6 +56,19 @@ SINGLE_WORD_ALIASES: dict[str, tuple[str, str]] = {
     "check": ("cek", "proyek"),
     "verify": ("cek", "proyek"),
     "fsck": ("cek", "proyek"),
+    "stats": ("statistik", ""),
+    "statistik": ("statistik", ""),
+    # Emoji commands
+    "💾": ("simpan", ""),
+    "📋": ("lihat", "perubahan"),
+    "📊": ("statistik", ""),
+    "🔍": ("cari", ""),
+    "🌿": ("lihat", "cabang"),
+    "🏷️": ("lihat", "tag"),
+    "↩️": ("lihat", "riwayat"),
+    "❓": ("bantuan", ""),
+    "🔄": ("batalkan", "versi"),
+    "📦": ("cadangan", ""),
 }
 
 # Multi-word verb aliases: verb -> canonical verb
@@ -107,6 +123,24 @@ VERB_ALIASES: dict[str, str] = {
     # Stash commands
     "sementara": "simpan sementara",
     "stash": "simpan sementara",
+    # Bahasa gaul / casual
+    "gas": "simpan",
+    "gaskeun": "simpan",
+    "udah": "simpan",
+    "done": "simpan",
+    "slesai": "simpan",
+    "selesai": "simpan",
+    "batalin": "batalkan",
+    "urungkan": "batalkan",
+    "gak jadi": "batalkan",
+    "lupa": "lihat riwayat",
+    "kemana": "lihat riwayat",
+    "terakhir": "lihat riwayat",
+    "sebelumnya": "lihat riwayat",
+    "liat": "lihat perubahan",
+    "cek": "cek",
+    "pp": "lihat perubahan",
+    "brp": "lihat riwayat",
     "pop": "ambil",
     # Rebase commands
     "susun": "susun",
@@ -227,6 +261,82 @@ CABANG_OPERATIONS: dict[str, tuple[str, str]] = {
 }
 
 
+def _fix_typos(word: str) -> str:
+    """Fix common typos in commands."""
+    # Common typos and their corrections
+    typo_map = {
+        "simpann": "simpan",
+        "simpann": "simpan",
+        "statuss": "status",
+        "stauts": "status",
+        "stauts": "status",
+        "riwayatt": "riwayat",
+        "riwayat": "riwayat",
+        "cabangg": "cabang",
+        "gabungg": "gabung",
+        "gabungkan": "gabungkan",
+        "bandingkan": "bandingkan",
+        "bandingkan": "bandingkan",
+        "pulihkan": "pulihkan",
+        "batalkan": "batalkan",
+        "konfigurasi": "konfigurasi",
+        "jelaskan": "jelaskan",
+        "mulai": "mulai",
+        "mulai": "mulai",
+    }
+    
+    # Check for exact match first
+    if word in typo_map:
+        return typo_map[word]
+    
+    # Check for common patterns
+    if word.endswith("n") and word[:-1] in VERB_ALIASES:
+        return word[:-1]
+    if word.endswith("nn") and word[:-2] in VERB_ALIASES:
+        return word[:-2]
+    
+    return word
+
+
+def _calculate_similarity(s1: str, s2: str) -> float:
+    """Calculate similarity between two strings (0-1)."""
+    if not s1 or not s2:
+        return 0.0
+    
+    # Simple Levenshtein-like similarity
+    len1, len2 = len(s1), len(s2)
+    if len1 == 0 or len2 == 0:
+        return 0.0
+    
+    # Count matching characters in order
+    matches = 0
+    j = 0
+    for i in range(len1):
+        while j < len2 and s2[j] != s1[i]:
+            j += 1
+        if j < len2:
+            matches += 1
+            j += 1
+    
+    return matches / max(len1, len2)
+
+
+def _find_closest_command(word: str) -> str | None:
+    """Find the closest matching command for a typo."""
+    all_commands = list(VERB_ALIASES.keys()) + list(SINGLE_WORD_ALIASES.keys())
+    
+    best_match = None
+    best_score = 0.0
+    
+    for cmd in all_commands:
+        score = _calculate_similarity(word, cmd)
+        if score > best_score and score > 0.6:  # Threshold for similarity
+            best_score = score
+            best_match = cmd
+    
+    return best_match
+
+
 def parse_command(input_text: str) -> ParsedCommand:
     """Parse a command string into a ParsedCommand.
 
@@ -271,6 +381,9 @@ def parse_command(input_text: str) -> ParsedCommand:
         return cmd
 
     first_word = regular_tokens[0].value.lower()
+    
+    # Apply typo fix
+    first_word = _fix_typos(first_word)
 
     # Check single-word aliases first
     if len(regular_tokens) == 1 and first_word in SINGLE_WORD_ALIASES:
@@ -278,6 +391,13 @@ def parse_command(input_text: str) -> ParsedCommand:
         cmd.verb = verb
         cmd.subcommand = sub
         return cmd
+    
+    # If single word not found, try to find similar command
+    if len(regular_tokens) == 1 and first_word not in VERB_ALIASES:
+        closest = _find_closest_command(first_word)
+        if closest:
+            # Store suggestion for error handling
+            cmd.options["_suggestion"] = closest
 
     # ── Special handling for "cabang <action>" pattern ──
     if first_word == "cabang" and len(regular_tokens) >= 2:

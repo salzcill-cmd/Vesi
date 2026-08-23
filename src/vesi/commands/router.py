@@ -296,6 +296,11 @@ def route_command(
     if handler:
         return handler(parsed, verbose=verbose, debug=debug)
 
-    # Unknown command
+    # Unknown command - check for suggestion from parser
     suggestion = SUGGESTIONS.get(verb)
+    
+    # Check if parser found a similar command
+    if not suggestion and "_suggestion" in parsed.options:
+        suggestion = parsed.options["_suggestion"]
+    
     raise InvalidCommandError(verb, suggestion=suggestion)
