@@ -25,6 +25,14 @@ from vesi.commands.cmd_tag import cmd_beri_tag, cmd_lihat_tag, cmd_hapus_tag
 from vesi.commands.cmd_show import cmd_isi
 from vesi.commands.cmd_search import cmd_cari
 from vesi.commands.cmd_amend import cmd_simpan_amend
+from vesi.commands.cmd_stash import (
+    cmd_simpan_sementara,
+    cmd_ambil_stash,
+    cmd_lihat_stash,
+    cmd_hapus_stash,
+)
+from vesi.commands.cmd_cherrypick import cmd_ambil_versi
+from vesi.commands.cmd_rebase import cmd_susun_ulang, cmd_susun_ulang_ke
 from vesi.errors.exceptions import InvalidCommandError
 from vesi.parser.parser import ParsedCommand
 
@@ -39,6 +47,22 @@ def cmd_beri(
     if parsed.subcommand == "tag":
         return cmd_beri_tag(parsed, verbose=verbose, debug=debug)
     return cmd_beri_tag(parsed, verbose=verbose, debug=debug)
+
+
+def cmd_ambil_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle 'ambil' command - dispatch to stash or cherry-pick."""
+    if parsed.subcommand == "stash":
+        return cmd_ambil_stash(parsed, verbose=verbose, debug=debug)
+    elif parsed.subcommand == "versi":
+        return cmd_ambil_versi(parsed, verbose=verbose, debug=debug)
+    else:
+        # Default to cherry-pick
+        return cmd_ambil_versi(parsed, verbose=verbose, debug=debug)
 
 
 def cmd_simpan_handler(
@@ -68,6 +92,8 @@ COMMANDS: dict[str, callable] = {
     "beri": cmd_beri,
     "isi": cmd_isi,
     "cari": cmd_cari,
+    "susun": cmd_susun_ulang,
+    "ambil": cmd_ambil_handler,
 }
 
 # Map of verb+subcommand -> handler function
@@ -76,13 +102,20 @@ SUBCOMMANDS: dict[tuple[str, str], callable] = {
     ("lihat", "riwayat"): cmd_lihat_riwayat,
     ("lihat", "cabang"): cmd_lihat_cabang,
     ("lihat", "tag"): cmd_lihat_tag,
+    ("lihat", "stash"): cmd_lihat_stash,
     ("buat", "cabang"): cmd_buat_cabang,
     ("pindah", "cabang"): cmd_pindah_cabang,
     ("hapus", "cabang"): cmd_hapus_cabang,
     ("hapus", "tag"): cmd_hapus_tag,
+    ("hapus", "stash"): cmd_hapus_stash,
     ("batalkan", "perubahan"): cmd_batalkan_perubahan,
     ("batalkan", "gabungan"): cmd_batalkan_gabungan,
     ("lanjutkan", "gabungan"): cmd_lanjutkan_gabungan,
+    ("susun", "ulang"): cmd_susun_ulang,
+    ("susun", "ke"): cmd_susun_ulang_ke,
+    ("ambil", "stash"): cmd_ambil_stash,
+    ("ambil", "versi"): cmd_ambil_versi,
+    ("simpan", "sementara"): cmd_simpan_sementara,
 }
 
 # Suggestion map for similar commands
@@ -114,6 +147,16 @@ SUGGESTIONS: dict[str, str] = {
     "search": "cari",
     "grep": "cari",
     "find": "cari",
+    # Stash commands
+    "stash": "simpan sementara",
+    "sementara": "simpan sementara",
+    "pop": "ambil stash",
+    # Rebase commands
+    "rebase": "susun ulang",
+    "squash": "susun ulang",
+    # Cherry-pick
+    "cherry-pick": "ambil versi",
+    "pick": "ambil versi",
 }
 
 

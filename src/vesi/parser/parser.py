@@ -104,10 +104,35 @@ VERB_ALIASES: dict[str, str] = {
     "search": "cari",
     "grep": "cari",
     "find": "cari",
+    # Stash commands
+    "sementara": "simpan sementara",
+    "stash": "simpan sementara",
+    "ambil": "ambil",
+    "pop": "ambil",
+    # Rebase commands
+    "susun": "susun",
+    "rebase": "susun",
+    "squash": "susun",
+    # Cherry-pick
+    "ambil": "ambil",
+    "cherry": "ambil",
+    "pick": "ambil",
 }
 
 # Subcommand aliases: (verb, sub) -> canonical (verb, sub)
 SUBCOMMAND_ALIASES: dict[tuple[str, str], tuple[str, str]] = {
+    # Stash subcommands
+    ("simpan", "sementara"): ("simpan", "sementara"),
+    ("simpan", "stash"): ("simpan", "sementara"),
+    ("ambil", "stash"): ("ambil", "stash"),
+    ("lihat", "stash"): ("lihat", "stash"),
+    # Rebase subcommands
+    ("susun", "ulang"): ("susun", "ulang"),
+    ("susun", "rebase"): ("susun", "ulang"),
+    # Cherry-pick subcommands
+    ("ambil", "versi"): ("ambil", "versi"),
+    ("ambil", "commit"): ("ambil", "versi"),
+    ("cherry", "pick"): ("ambil", "versi"),
     ("lihat", "riwayat"): ("lihat", "riwayat"),
     ("lihat", "history"): ("lihat", "riwayat"),
     ("lihat", "log"): ("lihat", "riwayat"),
@@ -276,6 +301,10 @@ def parse_command(input_text: str) -> ParsedCommand:
         _parse_isi(cmd, regular_tokens[1:])
     elif verb == "cari":
         _parse_cari(cmd, regular_tokens[1:])
+    elif verb == "susun":
+        _parse_susun(cmd, regular_tokens[1:])
+    elif verb == "ambil":
+        _parse_ambil(cmd, regular_tokens[1:])
     else:
         cmd.args = [t.value for t in regular_tokens[1:]]
 
@@ -485,3 +514,44 @@ def _parse_cari(cmd: ParsedCommand, tokens: list[Token]) -> None:
         else:
             cmd.args.append(tokens[i].value)
             i += 1
+
+
+def _parse_susun(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: susun ulang [jumlah] | susun ulang ke <base>"""
+    if not tokens:
+        cmd.subcommand = "ulang"
+        return
+
+    sub = tokens[0].value.lower()
+    if sub in ("ulang", "rebase"):
+        cmd.subcommand = "ulang"
+        remaining = tokens[1:]
+        if remaining:
+            # Check for 'ke' (to) pattern
+            if remaining[0].value.lower() == "ke":
+                cmd.subcommand = "ke"
+                cmd.args = [t.value for t in remaining[1:]]
+            else:
+                cmd.args = [t.value for t in remaining]
+    else:
+        cmd.subcommand = "ulang"
+        cmd.args = [t.value for t in tokens]
+
+
+def _parse_ambil(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: ambil stash [index] | ambil versi <commit>"""
+    if not tokens:
+        cmd.subcommand = "versi"
+        return
+
+    sub = tokens[0].value.lower()
+    if sub in ("stash", "stashing"):
+        cmd.subcommand = "stash"
+        cmd.args = [t.value for t in tokens[1:]]
+    elif sub in ("versi", "commit", "pick", "cherry"):
+        cmd.subcommand = "versi"
+        cmd.args = [t.value for t in tokens[1:]]
+    else:
+        # Default: assume it's a commit hash for cherry-pick
+        cmd.subcommand = "versi"
+        cmd.args = [t.value for t in tokens]
