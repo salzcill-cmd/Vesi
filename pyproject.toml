@@ -28,12 +28,11 @@ classifiers = [
     "Topic :: Education",
     "Natural Language :: Indonesian",
 ]
-urls = [
-    {name = "Homepage", url = "https://github.com/username/vesi"},
-    {name = "Documentation", url = "https://github.com/username/vesi#readme"},
-    {name = "Repository", url = "https://github.com/username/vesi"},
-    {name = "Bug Tracker", url = "https://github.com/username/vesi/issues"},
-]
+[project.urls]
+Homepage = "https://github.com/username/vesi"
+Documentation = "https://github.com/username/vesi#readme"
+Repository = "https://github.com/username/vesi"
+"Bug Tracker" = "https://github.com/username/vesi/issues"
 
 [project.scripts]
 vesi = "vesi.cli.app:main"
