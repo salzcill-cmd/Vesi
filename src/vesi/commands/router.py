@@ -33,6 +33,10 @@ from vesi.commands.cmd_stash import (
 )
 from vesi.commands.cmd_cherrypick import cmd_ambil_versi
 from vesi.commands.cmd_rebase import cmd_susun_ulang, cmd_susun_ulang_ke
+from vesi.commands.cmd_blame import cmd_siapa_ubah
+from vesi.commands.cmd_bisect import cmd_bagi_cari
+from vesi.commands.cmd_reflog import cmd_jejak
+from vesi.commands.cmd_worktree import cmd_folder_kerja
 from vesi.errors.exceptions import InvalidCommandError
 from vesi.parser.parser import ParsedCommand
 
@@ -65,6 +69,26 @@ def cmd_ambil_handler(
         return cmd_ambil_versi(parsed, verbose=verbose, debug=debug)
 
 
+def cmd_bagi_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle 'bagi' command - dispatch to bisect."""
+    return cmd_bagi_cari(parsed, verbose=verbose, debug=debug)
+
+
+def cmd_folder_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle 'folder' command - dispatch to worktree."""
+    return cmd_folder_kerja(parsed, verbose=verbose, debug=debug)
+
+
 def cmd_simpan_handler(
     parsed: ParsedCommand,
     *,
@@ -94,6 +118,10 @@ COMMANDS: dict[str, callable] = {
     "cari": cmd_cari,
     "susun": cmd_susun_ulang,
     "ambil": cmd_ambil_handler,
+    "siapa": cmd_siapa_ubah,
+    "bagi": cmd_bagi_handler,
+    "jejak": cmd_jejak,
+    "folder": cmd_folder_handler,
 }
 
 # Map of verb+subcommand -> handler function
@@ -116,6 +144,16 @@ SUBCOMMANDS: dict[tuple[str, str], callable] = {
     ("ambil", "stash"): cmd_ambil_stash,
     ("ambil", "versi"): cmd_ambil_versi,
     ("simpan", "sementara"): cmd_simpan_sementara,
+    ("siapa", "ubah"): cmd_siapa_ubah,
+    ("bagi", "cari"): cmd_bagi_cari,
+    ("bagi", "mulai"): cmd_bagi_cari,
+    ("bagi", "baik"): cmd_bagi_cari,
+    ("bagi", "buruk"): cmd_bagi_cari,
+    ("bagi", "selesai"): cmd_bagi_cari,
+    ("folder", "kerja"): cmd_folder_kerja,
+    ("folder", "buat"): cmd_folder_kerja,
+    ("folder", "hapus"): cmd_folder_kerja,
+    ("folder", "list"): cmd_folder_kerja,
 }
 
 # Suggestion map for similar commands
@@ -157,6 +195,15 @@ SUGGESTIONS: dict[str, str] = {
     # Cherry-pick
     "cherry-pick": "ambil versi",
     "pick": "ambil versi",
+    # Blame
+    "blame": "siapa ubah",
+    "annotate": "siapa ubah",
+    # Bisect
+    "bisect": "bagi cari",
+    # Reflog
+    "reflog": "jejak",
+    # Worktree
+    "worktree": "folder kerja",
 }
 
 

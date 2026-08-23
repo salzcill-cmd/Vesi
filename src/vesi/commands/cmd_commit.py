@@ -81,6 +81,11 @@ def cmd_simpan_versi(
     if active_branch:
         repo.refs.set_branch_hash(active_branch, snapshot_hash)
 
+    # Add reflog entry
+    from vesi.commands.cmd_reflog import ReflogManager
+    reflog = ReflogManager(repo)
+    reflog.add_entry(snapshot_hash, "commit", message, active_branch or "")
+
     # Clear staging area
     repo.index.clear()
 

@@ -107,16 +107,27 @@ VERB_ALIASES: dict[str, str] = {
     # Stash commands
     "sementara": "simpan sementara",
     "stash": "simpan sementara",
-    "ambil": "ambil",
     "pop": "ambil",
     # Rebase commands
     "susun": "susun",
     "rebase": "susun",
     "squash": "susun",
     # Cherry-pick
-    "ambil": "ambil",
     "cherry": "ambil",
     "pick": "ambil",
+    # Blame
+    "siapa": "siapa",
+    "blame": "siapa",
+    "annotate": "siapa",
+    # Bisect
+    "bagi": "bagi",
+    "bisect": "bagi",
+    # Reflog
+    "jejak": "jejak",
+    "reflog": "jejak",
+    # Worktree
+    "folder": "folder",
+    "worktree": "folder",
 }
 
 # Subcommand aliases: (verb, sub) -> canonical (verb, sub)
@@ -148,6 +159,14 @@ SUBCOMMAND_ALIASES: dict[tuple[str, str], tuple[str, str]] = {
     ("batalkan", "merge"): ("batalkan", "gabungan"),
     ("lanjutkan", "gabungan"): ("lanjutkan", "gabungan"),
     ("lanjutkan", "merge"): ("lanjutkan", "gabungan"),
+    # Bisect subcommands
+    ("bagi", "cari"): ("bagi", "cari"),
+    ("bagi", "mulai"): ("bagi", "mulai"),
+    ("bagi", "baik"): ("bagi", "baik"),
+    ("bagi", "buruk"): ("bagi", "buruk"),
+    ("bagi", "selesai"): ("bagi", "selesai"),
+    # Siapa (blame)
+    ("siapa", "ubah"): ("siapa", "ubah"),
 }
 
 # Branch operation patterns: "cabang <action>" -> (verb, subcommand)
@@ -305,6 +324,14 @@ def parse_command(input_text: str) -> ParsedCommand:
         _parse_susun(cmd, regular_tokens[1:])
     elif verb == "ambil":
         _parse_ambil(cmd, regular_tokens[1:])
+    elif verb == "siapa":
+        _parse_siapa(cmd, regular_tokens[1:])
+    elif verb == "bagi":
+        _parse_bagi(cmd, regular_tokens[1:])
+    elif verb == "jejak":
+        _parse_jejak(cmd, regular_tokens[1:])
+    elif verb == "folder":
+        _parse_folder(cmd, regular_tokens[1:])
     else:
         cmd.args = [t.value for t in regular_tokens[1:]]
 
@@ -555,3 +582,101 @@ def _parse_ambil(cmd: ParsedCommand, tokens: list[Token]) -> None:
         # Default: assume it's a commit hash for cherry-pick
         cmd.subcommand = "versi"
         cmd.args = [t.value for t in tokens]
+
+
+def _parse_siapa(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: siapa ubah <file> [dari <versi>]"""
+    if not tokens:
+        return
+
+    sub = tokens[0].value.lower()
+    if sub in ("ubah", "change"):
+        cmd.subcommand = "ubah"
+        remaining = tokens[1:]
+    else:
+        cmd.subcommand = "ubah"
+        remaining = tokens
+
+    # Parse 'dari' (from) pattern
+    i = 0
+    while i < len(remaining):
+        val = remaining[i].value.lower()
+        if val in ("dari", "from"):
+            i += 1
+            if i < len(remaining):
+                cmd.options["from"] = remaining[i].value
+            i += 1
+        else:
+            cmd.args.append(remaining[i].value)
+            i += 1
+
+
+def _parse_bagi(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: bagi cari [mulai|baik|buruk|selesai]"""
+    if not tokens:
+        cmd.subcommand = "cari"
+        return
+
+    sub = tokens[0].value.lower()
+    sub_map = {
+        "cari": "cari",
+        "mulai": "mulai",
+        "start": "mulai",
+        "baik": "baik",
+        "good": "baik",
+        "buruk": "buruk",
+        "bad": "buruk",
+        "selesai": "selesai",
+        "reset": "selesai",
+        "clear": "selesai",
+    }
+    cmd.subcommand = sub_map.get(sub, sub)
+    cmd.args = [t.value for t in tokens[1:]]
+
+
+def _parse_jejak(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: jejak [count]"""
+    cmd.args = [t.value for t in tokens]
+
+
+def _parse_folder(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: folder kerja [buat|hapus|list]"""
+    if not tokens:
+        cmd.subcommand = "kerja"
+        return
+
+    sub = tokens[0].value.lower()
+    
+    # Handle 'folder kerja buat' pattern
+    if sub == "kerja":
+        # Check if there's another token after 'kerja'
+        if len(tokens) > 1:
+            action = tokens[1].value.lower()
+            action_map = {
+                "buat": "buat",
+                "create": "buat",
+                "add": "buat",
+                "hapus": "hapus",
+                "remove": "hapus",
+                "rm": "hapus",
+                "list": "list",
+                "ls": "list",
+            }
+            cmd.subcommand = action_map.get(action, action)
+            cmd.args = [t.value for t in tokens[2:]]
+        else:
+            cmd.subcommand = "kerja"
+    else:
+        # Direct action without 'kerja'
+        action_map = {
+            "buat": "buat",
+            "create": "buat",
+            "add": "buat",
+            "hapus": "hapus",
+            "remove": "hapus",
+            "rm": "hapus",
+            "list": "list",
+            "ls": "list",
+        }
+        cmd.subcommand = action_map.get(sub, sub)
+        cmd.args = [t.value for t in tokens[1:]]
