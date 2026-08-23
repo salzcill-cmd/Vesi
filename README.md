@@ -6,14 +6,15 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-00ff88?style=for-the-badge)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.3.0-ff6b6b?style=for-the-badge)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-164%20passed-4ecdc4?style=for-the-badge)](#testing)
+[![Version](https://img.shields.io/badge/version-0.5.0-ff6b6b?style=for-the-badge)](CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-190%20passed-4ecdc4?style=for-the-badge)](#testing)
+[![Features](https://img.shields.io/badge/features-35+-9b59b6?style=for-the-badge)](#semua-command)
 
 <br/>
 
 `vesi` bukan "Git yang diterjemahkan". Ini VCS baru dengan command Bahasa Indonesia yang dirancang dari nol untuk **pemula** — tapi engine-nya serius.
 
-[**Mulai Pakai**](#mulai-cepat) • [**Command List**](#semua-command) • [**Workflow**](#workflow) • [**Kontribusi**](#kontribusi)
+[**Mulai Pakai**](#mulai-cepat) • [**Command List**](#semua-command) • [**Workflow**](#workflow) • [**Fitur Pro**](#fitur-pro) • [**Kontribusi**](#kontribusi)
 
 <br/>
 
@@ -60,6 +61,27 @@ $ vesi cabang hapus login
 </td>
 </tr>
 </table>
+
+### 🏆 Vesi vs Git
+
+| Fitur | Vesi | Git |
+|-------|------|-----|
+| **Basic VCS** | ✅ | ✅ |
+| **Bahasa Indonesia** | ✅ Natural | ❌ Inggris teknis |
+| **Undo Commit** | ✅ `batalkan versi` | ⚠️ `git reset` (ribet) |
+| **Search History** | ✅ `cari riwayat` | ⚠️ `git log --grep` |
+| **Auto Backup** | ✅ `cadangan buat` | ❌ Manual |
+| **File Insights** | ✅ `lihat file` | ⚠️ `git log --follow` |
+| **Commit Templates** | ✅ `pola commit` | ❌ Tidak ada |
+| **Smart Diff** | ✅ `bandingkan pintar` | ⚠️ `git diff --stat` |
+| **Conflict Helper** | ✅ `bantu konflik` | ❌ Tidak ada |
+| **Interactive Commit** | ✅ `simpan interaktif` | ❌ Tidak ada |
+| **Project Statistics** | ✅ `statistik` | ❌ Tidak ada |
+| **Auto Save** | ✅ `auto simpan` | ❌ Tidak ada |
+| **Export/Import** | ✅ `ekspor` / `impor` | ⚠️ `git archive` |
+| **Custom Aliases** | ✅ `alias tambah` | ⚠️ `git config alias` |
+| **File Locking** | ✅ `kunci file` | ❌ Tidak ada |
+| **Merge Assistant** | ✅ `asisten gabung` | ❌ Tidak ada |
 
 ---
 
@@ -131,8 +153,10 @@ vesi simpan "tambah fitur login"
 | `vesi simpan "pesan"` | `vesi save` | Simpan versi (commit) |
 | `vesi simpan --amend` | | Ubah commit terakhir |
 | `vesi simpan sementara` | `vesi stash` | Simpan perubahan sementara |
+| `vesi simpan interaktif` | `vesi wizard` | Wizard commit langkah demi langkah |
 | `vesi riwayat` | `vesi log` | Lihat daftar versi |
 | `vesi bandingkan` | `vesi diff` | Lihat perbedaan |
+| `vesi bandingkan pintar` | `vesi smart diff` | Diff dengan ringkasan |
 | `vesi isi <file>` | `vesi show` | Tampilkan isi file |
 
 </details>
@@ -144,6 +168,7 @@ vesi simpan "tambah fitur login"
 |---------|-------|--------|
 | `vesi pulihkan <file>` | `vesi restore` | Kembalikan file ke versi sebelumnya |
 | `vesi batal <file>` | `vesi undo` | Batalkan perubahan |
+| `vesi batalkan versi` | `vesi undo commit` | Batalkan commit terakhir |
 | `vesi ambil stash` | `vesi pop` | Ambil stash tersimpan |
 | `vesi ambil versi <commit>` | `vesi cherry-pick` | Apply commit tertentu |
 
@@ -183,6 +208,46 @@ vesi simpan "tambah fitur login"
 | `vesi bagi cari` | `vesi bisect` | Cari commit penyebab bug |
 | `vesi susun ulang <n>` | `vesi rebase` | Gabungkan N commit jadi satu |
 | `vesi cari <pola>` | `vesi grep` | Cari pola di dalam file |
+| `vesi cari riwayat <kata>` | `vesi search history` | Cari dalam riwayat commit |
+
+</details>
+
+<details>
+<summary><b>📊 Statistik & Insights</b></summary>
+
+| Command | Alias | Fungsi |
+|---------|-------|--------|
+| `vesi statistik` | `vesi stats` | Statistik proyek |
+| `vesi statistik --detail` | | Statistik lengkap |
+| `vesi lihat file <file>` | `vesi insights` | Statistik file |
+
+</details>
+
+<details>
+<summary><b>🤖 Fitur Canggih</b></summary>
+
+| Command | Alias | Fungsi |
+|---------|-------|--------|
+| `vesi pola commit` | `vesi template` | Template pesan commit |
+| `vesi cadangan buat` | `vesi backup` | Buat backup otomatis |
+| `vesi cadangan pulihkan` | | Pulihkan dari backup |
+| `vesi bantu konflik` | `vesi conflict help` | Bantu selesaikan konflik |
+| `vesi asisten gabung` | `vesi merge assistant` | Asisten merge interaktif |
+
+</details>
+
+<details>
+<summary><b>⚡ Fitur Pro</b></summary>
+
+| Command | Alias | Fungsi |
+|---------|-------|--------|
+| `vesi auto simpan aktifkan` | `vesi autosave on` | Aktifkan auto-save |
+| `vesi auto simpan nonaktifkan` | `vesi autosave off` | Nonaktifkan auto-save |
+| `vesi ekspor` | `vesi export` | Export ke zip |
+| `vesi impor` | `vesi import` | Import dari zip |
+| `vesi alias tambah <nama> <cmd>` | `vesi add alias` | Buat custom alias |
+| `vesi kunci file <file>` | `vesi lock` | Kunci file |
+| `vesi kunci buka <file>` | `vesi unlock` | Buka kunci file |
 
 </details>
 
@@ -260,6 +325,162 @@ vesi cabang pindah utama                # 2. Pindah branch
 vesi ambil stash                        # 3. Ambil lagi
 ```
 
+### 🔄 Undo — Batalkan Commit
+
+```bash
+vesi riwayat                            # 1. Lihat riwayat
+
+# Ups, commit salah!
+vesi batalkan versi                     # 2. Batalkan commit terakhir
+
+# Perubahan tetap di staging, bisa commit lagi
+vesi simpan "pesan yang benar"
+```
+
+### 🔎 Search — Cari dalam Riwayat
+
+```bash
+vesi cari riwayat login                 # 1. Cari commit terkait login
+vesi cari riwayat --file main.py        # 2. Cari yang ubah main.py
+vesi cari riwayat --author budi         # 3. Cari commit author budi
+```
+
+---
+
+## Fitur Pro
+
+### 📊 Statistik Proyek
+
+```bash
+vesi statistik
+```
+
+```
+📊 Statistik Proyek
+
+  📁 Repository:
+    Total commit:     42
+    Total file:       15
+    Total author:     3
+
+  👥 Kontributor:
+    budi               25x (59%) ████████████
+    ani                12x (28%) █████
+    deni                5x (11%) ██
+
+  🕐 Aktivitas Terakhir:
+    a1b2c3d  2026-08-23  fitur login selesai
+    f4e5d6a  2026-08-22  update homepage
+    ...
+```
+
+### 🤖 Interactive Commit
+
+```bash
+vesi simpan interaktif
+```
+
+```
+🔄 Simpan Interaktif - Langkah demi Langkah
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📁 Langkah 1: File yang akan disimpan (3 file)
+  ✓ main.py
+  ✓ utils.py
+  ✓ config.json
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏷️  Langkah 2: Pilih tipe commit
+
+  1. feat      Fitur baru
+  2. fix       Perbaikan bug
+  3. docs      Dokumentasi
+  ...
+  Pilih (1-8) [1]: 1
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✍️  Langkah 3: Deskripsi perubahan
+
+  Deskripsi: tambah halaman login
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👀 Langkah 4: Preview
+
+  Pesan: "feat: tambah halaman login"
+  File:  3 file
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ Langkah 5: Konfirmasi
+
+  Simpan? [Y/n]: y
+
+🎉 Berhasil!
+  ID:    a1b2c3d
+  Pesan: feat: tambah halaman login
+  File:  3 file disimpan
+```
+
+### 📦 Export/Import
+
+```bash
+# Export ke zip
+vesi ekspor backup-hari-ini.zip
+
+# Import dari zip
+vesi impor backup-hari-ini.zip
+```
+
+### 🔒 File Locking
+
+```bash
+# Kunci file agar tidak diedit orang lain
+vesi kunci file main.py
+
+# Cek status lock
+vesi kunci status main.py
+
+# Buka kunci
+vesi kunci buka main.py
+```
+
+### 🎨 Custom Aliases
+
+```bash
+# Buat alias
+vesi alias tambah s simpan
+vesi alias tambah st stel
+vesi alias tambah co "cabang baru"
+
+# Gunakan alias
+vesi s "fix bug login"
+vesi st .
+vesi co fitur-baru
+```
+
+### 🤖 Merge Assistant
+
+```bash
+vesi asisten gabung
+```
+
+```
+🤖 Asisten Gabung - Bantuan Merge Conflict
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 Apa itu Merge Conflict?
+Konflik terjadi ketika dua branch mengubah bagian yang sama.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛠️  Perintah yang Tersedia:
+
+  asisten gabung              Tampilkan bantuan ini
+  asisten gabung <file>       Analisis konflik di file
+  asisten gabung --solve      Auto-solve konflik sederhana
+  asisten gabung --pilih kami   Pilih versi kami
+  asisten gabung --pilih mereka Pilih versi mereka
+  asisten gabung --pilih gabung Gabungkan kedua versi
+```
+
 ---
 
 ## Konsep VCS
@@ -288,7 +509,10 @@ project/
 │   ├── objects/            # Content-addressed storage (SHA-256)
 │   ├── refs/               # Branch & tag references
 │   ├── stash/              # Stash storage
-│   └── backups/            # Backup sebelum restore
+│   ├── backups/            # Backup sebelum restore
+│   ├── locks.json          # File locks
+│   ├── aliases.json        # Custom aliases
+│   └── autosave.json       # Auto-save config
 ├── .abaikan                # File yang diabaikan (mirip .gitignore)
 ├── main.py                 # File project kamu
 └── ...
@@ -341,7 +565,7 @@ python -m pytest tests/unit/test_parser.py -v
 python -m pytest --cov=vesi
 ```
 
-**Status:** 164 tests ✅ (unit + integration + e2e)
+**Status:** 190 tests ✅ (unit + integration + e2e)
 
 ---
 
