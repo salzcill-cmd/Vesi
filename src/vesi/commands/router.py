@@ -37,6 +37,13 @@ from vesi.commands.cmd_blame import cmd_siapa_ubah
 from vesi.commands.cmd_bisect import cmd_bagi_cari
 from vesi.commands.cmd_reflog import cmd_jejak
 from vesi.commands.cmd_worktree import cmd_folder_kerja
+from vesi.commands.cmd_undo import cmd_batalkan_versi
+from vesi.commands.cmd_search_history import cmd_cari_riwayat
+from vesi.commands.cmd_backup import cmd_cadangan
+from vesi.commands.cmd_insights import cmd_lihat_file
+from vesi.commands.cmd_template import cmd_pola_commit
+from vesi.commands.cmd_smart_diff import cmd_bandingkan_pintar
+from vesi.commands.cmd_conflict import cmd_bantu_konflik
 from vesi.errors.exceptions import InvalidCommandError
 from vesi.parser.parser import ParsedCommand
 
@@ -89,6 +96,26 @@ def cmd_folder_handler(
     return cmd_folder_kerja(parsed, verbose=verbose, debug=debug)
 
 
+def cmd_pola_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle 'pola' command - dispatch to commit templates."""
+    return cmd_pola_commit(parsed, verbose=verbose, debug=debug)
+
+
+def cmd_bantu_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle 'bantu' command - dispatch to conflict helper."""
+    return cmd_bantu_konflik(parsed, verbose=verbose, debug=debug)
+
+
 def cmd_simpan_handler(
     parsed: ParsedCommand,
     *,
@@ -122,6 +149,9 @@ COMMANDS: dict[str, callable] = {
     "bagi": cmd_bagi_handler,
     "jejak": cmd_jejak,
     "folder": cmd_folder_handler,
+    "cadangan": cmd_cadangan,
+    "pola": cmd_pola_handler,
+    "bantu": cmd_bantu_handler,
 }
 
 # Map of verb+subcommand -> handler function
@@ -144,6 +174,10 @@ SUBCOMMANDS: dict[tuple[str, str], callable] = {
     ("ambil", "stash"): cmd_ambil_stash,
     ("ambil", "versi"): cmd_ambil_versi,
     ("simpan", "sementara"): cmd_simpan_sementara,
+    ("batalkan", "versi"): cmd_batalkan_versi,
+    ("lihat", "file"): cmd_lihat_file,
+    ("bandingkan", "pintar"): cmd_bandingkan_pintar,
+    ("cari", "riwayat"): cmd_cari_riwayat,
     ("siapa", "ubah"): cmd_siapa_ubah,
     ("bagi", "cari"): cmd_bagi_cari,
     ("bagi", "mulai"): cmd_bagi_cari,

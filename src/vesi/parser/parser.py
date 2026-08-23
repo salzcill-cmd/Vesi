@@ -128,6 +128,17 @@ VERB_ALIASES: dict[str, str] = {
     # Worktree
     "folder": "folder",
     "worktree": "folder",
+    # New commands
+    "undo": "batalkan versi",
+    "cadangan": "cadangan",
+    "backup": "cadangan",
+    "pola": "pola",
+    "template": "pola",
+    "insights": "lihat file",
+    "pintar": "bandingkan pintar",
+    "smart": "bandingkan pintar",
+    "bantu": "bantu",
+    "help": "bantu",
 }
 
 # Subcommand aliases: (verb, sub) -> canonical (verb, sub)
@@ -159,6 +170,19 @@ SUBCOMMAND_ALIASES: dict[tuple[str, str], tuple[str, str]] = {
     ("batalkan", "merge"): ("batalkan", "gabungan"),
     ("lanjutkan", "gabungan"): ("lanjutkan", "gabungan"),
     ("lanjutkan", "merge"): ("lanjutkan", "gabungan"),
+    # New commands
+    ("batalkan", "versi"): ("batalkan", "versi"),
+    ("batalkan", "commit"): ("batalkan", "versi"),
+    ("cadangan", "buat"): ("cadangan", "buat"),
+    ("cadangan", "create"): ("cadangan", "buat"),
+    ("cadangan", "pulihkan"): ("cadangan", "pulihkan"),
+    ("cadangan", "restore"): ("cadangan", "pulihkan"),
+    ("pola", "commit"): ("pola", "commit"),
+    ("lihat", "file"): ("lihat", "file"),
+    ("lihat", "insights"): ("lihat", "file"),
+    ("bandingkan", "pintar"): ("bandingkan", "pintar"),
+    ("bandingkan", "smart"): ("bandingkan", "pintar"),
+    ("bantu", "konflik"): ("bantu", "konflik"),
     # Bisect subcommands
     ("bagi", "cari"): ("bagi", "cari"),
     ("bagi", "mulai"): ("bagi", "mulai"),

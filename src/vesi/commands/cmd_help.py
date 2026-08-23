@@ -227,6 +227,104 @@ CONTOH:
     folder kerja buat ../project-v2 fitur-baru
     folder kerja
     folder kerja hapus ../project-v2""",
+    # Undo commit
+    "batalkan": (
+        "NAMA: batalkan\n"
+        "TUJUAN: Membatalkan perubahan, commit, atau merge\n\n"
+        "Sub-perintah:\n"
+        "  batalkan perubahan <file>    Batalkan perubahan file\n"
+        "  batalkan gabungan            Batalkan merge\n"
+        "  batalkan versi               Undo commit terakhir\n\n"
+        "CONTOH:\n"
+        "    batalkan perubahan main.py\n"
+        "    batalkan gabungan\n"
+        "    batalkan versi"
+    ),
+    # Backup
+    "cadangan": """NAMA: cadangan
+TUJUAN: Sistem backup otomatis sebelum operasi destruktif
+SINTAKS: cadangan [buat|pulihkan] [alasan]
+ALIAS: backup
+
+Sub-perintah:
+  cadangan                      Lihat semua backup
+  cadangan buat [alasan]        Buat backup baru
+  cadangan pulihkan <id>        Pulihkan dari backup
+
+CONTOH:
+    cadangan buat
+    cadangan buat "sebelum refactor"
+    cadangan pulihkan backup_1234567890""",
+    # Commit templates
+    "pola": """NAMA: pola commit
+TUJUAN: Template pesan commit yang konsisten
+SINTAKS: pola commit [type] [deskripsi]
+ALIAS: template
+
+Type yang tersedia:
+  feat      Fitur baru
+  fix       Perbaikan bug
+  docs      Dokumentasi
+  style     Style/format
+  refactor  Refactor kode
+  test      Test
+  chore     Maintenance
+  breaking  Breaking change
+
+CONTOH:
+    pola commit
+    pola commit feat
+    pola commit feat 'tambah login'
+""",
+    # File insights
+    "lihat": """NAMA: lihat
+TUJUAN: Melihat informasi tentang repository
+
+Sub-perintah:
+  lihat perubahan    Lihat file yang berubah
+  lihat riwayat      Lihat daftar versi
+  lihat cabang       Lihat semua cabang
+  lihat tag          Lihat semua tag
+  lihat stash        Lihat stash tersimpan
+  lihat file         Lihat statistik file
+  cari riwayat       Cari dalam riwayat commit
+
+CONTOH:
+    lihat perubahan
+    lihat riwayat
+    lihat file main.py
+    cari riwayat login""",
+    # Smart diff
+    "bandingkan": """NAMA: bandingkan
+TUJUAN: Menampilkan perbedaan antara versi atau working directory
+SINTAKS: bandingkan [pintar] [versi1] [versi2]
+ALIAS: diff
+
+Sub-perintah:
+  bandingkan              Diff biasa
+  bandingkan pintar       Diff dengan ringkasan
+  bandingkan pintar --stat - Hanya statistik
+
+CONTOH:
+    bandingkan
+    bandingkan pintar
+    bandingkan pintar --stat""",
+    # Conflict helper
+    "bantu": """NAMA: bantu konflik
+TUJUAN: Membantu menyelesaikan merge conflict
+SINTAKS: bantu konflik [file] [--pilih kami|mereka]
+ALIAS: help
+
+Sub-perintah:
+  bantu konflik              Tampilkan panduan konflik
+  bantu konflik <file>       Analisis konflik di file
+  bantu konflik --pilih kami   Pilih versi kami
+  bantu konflik --pilih mereka Pilih versi mereka
+
+CONTOH:
+    bantu konflik
+    bantu konflik main.py
+    bantu konflik --pilih kami""",
 }
 
 
@@ -292,7 +390,15 @@ def cmd_bantuan(
     print("  ── Analisis ──")
     print("  siapa ubah <file>       Lihat siapa ubah baris (blame)")
     print("  bagi cari               Cari commit bug (bisect)")
-    print("  susun ulang             Gabungkan commit (rebase)\n")
+    print("  susun ulang             Gabungkan commit (rebase)")
+    print("  cari riwayat            Cari dalam riwayat commit")
+    print("  lihat file <file>       Lihat statistik file\n")
+    print("  ── Canggih ──")
+    print("  batalkan versi          Undo commit terakhir")
+    print("  bandingkan pintar       Diff dengan ringkasan")
+    print("  cadangan buat           Buat backup otomatis")
+    print("  pola commit             Template pesan commit")
+    print("  bantu konflik           Bantu selesaikan konflik\n")
     print("  ── Lainnya ──")
     print("  bantuan                 Tampilkan bantuan ini (= help)")
     print("  jelaskan <konsep>       Pelajari konsep (= explain)\n")
