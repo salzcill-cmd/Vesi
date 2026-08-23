@@ -48,6 +48,13 @@ from vesi.commands.cmd_merge_assistant import cmd_asisten_gabung
 from vesi.commands.cmd_search_history import cmd_cari_riwayat
 from vesi.commands.cmd_backup import cmd_cadangan
 from vesi.commands.cmd_insights import cmd_lihat_file
+from vesi.commands.cmd_undo_all import cmd_batalkan_semua
+from vesi.commands.cmd_timetravel import cmd_kembali_ke_waktu
+from vesi.commands.cmd_quick_switch import cmd_pindah_cepat
+from vesi.commands.cmd_autosnapshot import cmd_foto_otomatis
+from vesi.commands.cmd_smart_message import cmd_pesan_pintar
+from vesi.commands.cmd_branch_preview import cmd_lihat_cabang_detail
+from vesi.commands.cmd_version_points import cmd_titik_pulih
 from vesi.commands.cmd_template import cmd_pola_commit
 from vesi.commands.cmd_smart_diff import cmd_bandingkan_pintar
 from vesi.commands.cmd_conflict import cmd_bantu_konflik
@@ -135,6 +142,51 @@ def cmd_simpan_handler(
     return cmd_simpan_versi(parsed, verbose=verbose, debug=debug)
 
 
+def cmd_batalkan_semua_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle 'batalkan' command for 'batalkan semua'."""
+    if parsed.subcommand == "semua":
+        return cmd_batalkan_semua(parsed, verbose=verbose, debug=debug)
+    elif parsed.subcommand == "versi":
+        return cmd_batalkan_versi(parsed, verbose=verbose, debug=debug)
+    elif parsed.subcommand == "perubahan":
+        return cmd_batalkan_perubahan(parsed, verbose=verbose, debug=debug)
+    elif parsed.subcommand == "gabungan":
+        return cmd_batalkan_gabungan(parsed, verbose=verbose, debug=debug)
+    else:
+        return cmd_batalkan_perubahan(parsed, verbose=verbose, debug=debug)
+
+
+def cmd_kembali_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle 'kembali' command for 'kembali ke waktu'."""
+    if parsed.subcommand == "ke waktu":
+        return cmd_kembali_ke_waktu(parsed, verbose=verbose, debug=debug)
+    else:
+        return cmd_kembali_ke_waktu(parsed, verbose=verbose, debug=debug)
+
+
+def cmd_pindah_cepat_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle 'pindah' command for 'pindah cepat'."""
+    if parsed.subcommand == "cepat":
+        return cmd_pindah_cepat(parsed, verbose=verbose, debug=debug)
+    else:
+        return cmd_pindah_cabang(parsed, verbose=verbose, debug=debug)
+
+
 # Map of verb -> handler function (for simple commands)
 COMMANDS: dict[str, callable] = {
     "mulai": cmd_mulai_proyek,
@@ -166,6 +218,12 @@ COMMANDS: dict[str, callable] = {
     "alias": cmd_alias,
     "kunci": cmd_kunci_file,
     "asisten": cmd_asisten_gabung,
+    "batalkan": cmd_batalkan_semua_handler,
+    "kembali": cmd_kembali_handler,
+    "pindah": cmd_pindah_cepat_handler,
+    "foto": cmd_foto_otomatis,
+    "pesan": cmd_pesan_pintar,
+    "titik": cmd_titik_pulih,
 }
 
 # Map of verb+subcommand -> handler function
@@ -216,6 +274,19 @@ SUBCOMMANDS: dict[tuple[str, str], callable] = {
     ("kunci", "buka"): cmd_kunci_file,
     ("kunci", "status"): cmd_kunci_file,
     ("asisten", "gabung"): cmd_asisten_gabung,
+    # Latest features
+    ("batalkan", "semua"): cmd_batalkan_semua,
+    ("kembali", "ke waktu"): cmd_kembali_ke_waktu,
+    ("pindah", "cepat"): cmd_pindah_cepat,
+    ("foto", "otomatis"): cmd_foto_otomatis,
+    ("foto", "lihat"): cmd_foto_otomatis,
+    ("foto", "pulihkan"): cmd_foto_otomatis,
+    ("pesan", "pintar"): cmd_pesan_pintar,
+    ("lihat", "cabang detail"): cmd_lihat_cabang_detail,
+    ("lihat", "cabang bandingkan"): cmd_lihat_cabang_detail,
+    ("titik", "pulih"): cmd_titik_pulih,
+    ("titik", "buat"): cmd_titik_pulih,
+    ("titik", "hapus"): cmd_titik_pulih,
 }
 
 # Suggestion map for similar commands
