@@ -825,19 +825,166 @@ def push_via_git_subprocess(
     remote: str = "origin",
     branch: str | None = None,
     force: bool = False,
+    remote_url: str | None = None,
+    auth_token: str | None = None,
     on_progress: Any = None,
 ) -> tuple[bool, str]:
     """Fallback: push using the system `git` command.
 
-    This is used when native push fails (e.g., SSH, missing deps).
+    Creates a temporary git repo from vesi data, pushes it, then cleans up.
+    This handles the case where vesi repos don't have .git directory.
     """
     import subprocess
+    import tempfile
 
     def _progress(msg: str) -> None:
         if on_progress:
             on_progress(msg, 0, 0)
 
-    # Determine branch
+    # Check if .git exists
+    git_dir = repo_root / ".git"
+    if git_dir.is_dir():
+        # Normal git repo - push directly
+        return _push_from_git_dir(repo_root, remote, branch, force, _progress)
+
+    # Vesi repo (no .git) - create temp git repo and push
+    _progress("Membuat temporary git repo untuk push...")
+
+    # Get vesi info
+    from vesi.repository.repository import Repository
+    from vesi.core.snapshot import SnapshotManager
+    from vesi.storage.tree import Tree
+    from vesi.hashing import short_hash
+
+    try:
+        repo = Repository(repo_root)
+    except Exception as e:
+        return False, f"Gagal membaca vesi repo: {e}"
+
+    head = repo.get_head_commit()
+    if not head:
+        return False, "Tidak ada commit untuk di-push"
+
+    # Get remote URL from vesi config
+    from vesi.remote.transport import RemoteConfig
+    rc = RemoteConfig(repo_root)
+    url = remote_url or rc.get_remote_url(remote)
+    if not url:
+        return False, f"Remote '{remote}' tidak ditemukan"
+
+    if not branch:
+        branch = repo.refs.get_active_branch() or "main"
+
+    _progress(f"  Commit: {short_hash(head)}")
+    _progress(f"  Remote: {url}")
+    _progress(f"  Branch: {branch}")
+
+    # Create temporary directory with git repo
+    tmp_dir = Path(tempfile.mkdtemp(prefix="vesi_push_"))
+
+    try:
+        # Init git repo with main branch
+        subprocess.run(["git", "init", "-b", branch], cwd=str(tmp_dir), capture_output=True, timeout=10)
+        subprocess.run(
+            ["git", "config", "user.name", "vesi"],
+            cwd=str(tmp_dir), capture_output=True, timeout=10,
+        )
+        subprocess.run(
+            ["git", "config", "user.email", "vesi@local"],
+            cwd=str(tmp_dir), capture_output=True, timeout=10,
+        )
+
+        # Add remote
+        subprocess.run(
+            ["git", "remote", "add", "origin", url],
+            cwd=str(tmp_dir), capture_output=True, timeout=10,
+        )
+
+        # Set auth
+        if auth_token:
+            subprocess.run(
+                ["git", "config", "http.extraHeader",
+                 f"Authorization: basic {__import__('base64').b64encode(f'x-access-token:{auth_token}'.encode()).decode()}"],
+                cwd=str(tmp_dir), capture_output=True, timeout=10,
+            )
+
+        # Checkout all files from vesi
+        snapshot_mgr = SnapshotManager(repo)
+        tree = snapshot_mgr.get_tree(head)
+
+        # Write all files from vesi to temp dir
+        file_count = 0
+        for entry in tree.get_blob_entries():
+            try:
+                content = repo.blobs.load_content(entry.hash_id)
+                file_path = tmp_dir / entry.path
+                file_path.parent.mkdir(parents=True, exist_ok=True)
+                file_path.write_bytes(content)
+                file_count += 1
+            except Exception:
+                pass
+
+        _progress(f"  File: {file_count} file diproses")
+
+        # Stage all files
+        subprocess.run(
+            ["git", "add", "."],
+            cwd=str(tmp_dir), capture_output=True, timeout=30,
+        )
+
+        # Get commit message
+        commit_data = repo.objects.load_json(head)
+        message = commit_data.get("message", "vesi push")
+        author = commit_data.get("author", "vesi")
+
+        # Commit
+        subprocess.run(
+            ["git", "commit", "-m", message,
+             "--author", f"{author} <{author}@vesi.local>"],
+            cwd=str(tmp_dir), capture_output=True, timeout=30,
+        )
+
+        _progress(f"  Commit: {message}")
+        _progress("\n  Push ke remote...")
+
+        # Push
+        cmd = ["git", "push", "origin", branch]
+        if force:
+            cmd.insert(2, "--force")
+
+        result = subprocess.run(
+            cmd, cwd=str(tmp_dir),
+            capture_output=True, text=True, timeout=120,
+        )
+
+        if result.returncode == 0:
+            output = result.stdout.strip()
+            _progress(f"✓ {output}")
+            return True, output
+        else:
+            error = result.stderr.strip() or result.stdout.strip()
+            _progress(f"✗ {error}")
+            return False, error
+
+    finally:
+        # Cleanup
+        import shutil
+        try:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+        except Exception:
+            pass
+
+
+def _push_from_git_dir(
+    repo_root: Path,
+    remote: str,
+    branch: str | None,
+    force: bool,
+    _progress: Any,
+) -> tuple[bool, str]:
+    """Push from a normal git repo."""
+    import subprocess
+
     if not branch:
         result = subprocess.run(
             ["git", "rev-parse", "--abbrev-ref", "HEAD"],

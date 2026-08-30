@@ -148,6 +148,8 @@ def cmd_kirim(
         remote=remote_name,
         branch=branch,
         force=force,
+        remote_url=remote_url,
+        auth_token=token,
         on_progress=lambda msg, *_: print(f"  {msg}"),
     )
 
