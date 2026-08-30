@@ -34,24 +34,31 @@ def cmd_remote(
 
     remote_config = RemoteConfig(repo.root)
     args = parsed.args or []
+    sub = parsed.subcommand or ""
 
-    if not args:
+    if not sub and not args:
         # List all remotes
         return _list_remotes(remote_config)
 
-    sub = args[0].lower()
+    # If no subcommand but has args, treat first arg as subcommand
+    if not sub and args:
+        sub = args[0].lower()
+        args = args[1:]
 
     if sub in ("tambah", "add"):
-        return _add_remote(remote_config, args[1:], verbose)
+        return _add_remote(remote_config, args, verbose)
     elif sub in ("hapus", "remove", "rm"):
-        return _remove_remote(remote_config, args[1:])
+        return _remove_remote(remote_config, args)
     elif sub in ("ganti", "set-url", "update"):
-        return _set_url(remote_config, args[1:])
+        return _set_url(remote_config, args)
     elif sub in ("lihat", "show", "info"):
-        return _show_remote(remote_config, args[1:], verbose)
+        return _show_remote(remote_config, args, verbose)
     elif sub in ("rename",):
-        return _rename_remote(remote_config, args[1:])
+        return _rename_remote(remote_config, args)
     else:
+        # If subcommand is actually a remote name, try to show it
+        if sub and not sub.startswith("-"):
+            return _show_remote(remote_config, [sub], verbose)
         raise VesiError(
             f"Perintah remote '{sub}' tidak dikenal.",
             hint="Perintah yang tersedia:\n  tambah, hapus, ganti, lihat, rename",
