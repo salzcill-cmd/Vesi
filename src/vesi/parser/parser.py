@@ -203,6 +203,46 @@ VERB_ALIASES: dict[str, str] = {
     "lock": "kunci",
     "asisten": "asisten",
     "assistant": "asisten",
+    # New upgraded commands
+    "tampilkan": "tampilkan",
+    "show": "tampilkan",
+    "ringkasan": "ringkasan",
+    "shortlog": "ringkasan",
+    "grafik": "grafik",
+    "graph": "grafik",
+    "deskripsi": "deskripsi",
+    "describe": "deskripsi",
+    "gabung": "gabungkan",
+    "catatan": "catatan",
+    "notes": "catatan",
+    "verifikasi": "verifikasi",
+    "verify": "verifikasi",
+    "bersihkan": "bersihkan",
+    "gc": "bersihkan",
+    "kumpulkan": "bersihkan",
+    "pack": "kemas",
+    "kemas": "kemas",
+    # Git bridge commands
+    "git": "git",
+    # Remote commands
+    "klon": "klon",
+    "clone": "klon",
+    "kirim": "kirim",
+    "push": "kirim",
+    "unduh": "unduh",
+    "fetch": "unduh",
+    "ambil remote": "ambil remote",
+    "pull": "ambil remote",
+    "remote": "remote",
+    # New advanced commands
+    "hook": "hook",
+    "hooks": "hook",
+    "plugin": "plugin",
+    "plugins": "plugin",
+    "watch": "watch",
+    "pelihara": "watch",
+    "completion": "completion",
+    "selesai": "completion",
 }
 
 # Subcommand aliases: (verb, sub) -> canonical (verb, sub)
@@ -255,6 +295,12 @@ SUBCOMMAND_ALIASES: dict[tuple[str, str], tuple[str, str]] = {
     ("bagi", "selesai"): ("bagi", "selesai"),
     # Siapa (blame)
     ("siapa", "ubah"): ("siapa", "ubah"),
+    # New upgraded commands
+    ("tampilkan", "versi"): ("tampilkan", "versi"),
+    ("tampilkan", "commit"): ("tampilkan", "versi"),
+    ("ringkasan", ""): ("ringkasan", ""),
+    ("grafik", ""): ("grafik", ""),
+    ("deskripsi", ""): ("deskripsi", ""),
 }
 
 # Branch operation patterns: "cabang <action>" -> (verb, subcommand)
@@ -508,6 +554,43 @@ def parse_command(input_text: str) -> ParsedCommand:
         _parse_jejak(cmd, regular_tokens[1:])
     elif verb == "folder":
         _parse_folder(cmd, regular_tokens[1:])
+    elif verb == "tampilkan":
+        _parse_tampilkan(cmd, regular_tokens[1:])
+    elif verb == "ringkasan":
+        cmd.args = [t.value for t in regular_tokens[1:]]
+    elif verb == "grafik":
+        cmd.args = [t.value for t in regular_tokens[1:]]
+    elif verb == "deskripsi":
+        cmd.args = [t.value for t in regular_tokens[1:]]
+    elif verb == "catatan":
+        _parse_catatan(cmd, regular_tokens[1:])
+    elif verb == "verifikasi":
+        cmd.subcommand = "tag"
+        cmd.args = [t.value for t in regular_tokens[1:]]
+    elif verb == "bersihkan":
+        cmd.flags.append("--gc")
+        cmd.args = [t.value for t in regular_tokens[1:]]
+    elif verb == "kemas":
+        cmd.flags.append("--pack")
+        cmd.args = [t.value for t in regular_tokens[1:]]
+    elif verb == "git":
+        _parse_git(cmd, regular_tokens[1:])
+    elif verb == "klon":
+        cmd.args = [t.value for t in regular_tokens[1:]]
+    elif verb == "kirim":
+        cmd.args = [t.value for t in regular_tokens[1:]]
+    elif verb == "unduh":
+        cmd.args = [t.value for t in regular_tokens[1:]]
+    elif verb == "remote":
+        _parse_remote(cmd, regular_tokens[1:])
+    elif verb == "hook":
+        _parse_hook(cmd, regular_tokens[1:])
+    elif verb == "plugin":
+        _parse_plugin(cmd, regular_tokens[1:])
+    elif verb == "watch":
+        cmd.args = [t.value for t in regular_tokens[1:]]
+    elif verb == "completion":
+        cmd.args = [t.value for t in regular_tokens[1:]]
     else:
         cmd.args = [t.value for t in regular_tokens[1:]]
 
@@ -879,6 +962,135 @@ def _parse_kunci(cmd: ParsedCommand, tokens: list[Token]) -> None:
         "unlock": "buka",
         "status": "status",
         "cek": "status",
+    }
+    cmd.subcommand = sub_map.get(sub, sub)
+    cmd.args = [t.value for t in tokens[1:]]
+
+
+def _parse_tampilkan(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: tampilkan versi [hash] [--stat] [--patch] [--file]"""
+    if not tokens:
+        cmd.subcommand = "versi"
+        return
+
+    sub = tokens[0].value.lower()
+    if sub in ("versi", "version", "commit"):
+        cmd.subcommand = "versi"
+        cmd.args = [t.value for t in tokens[1:]]
+    else:
+        # Default: assume first arg is hash, rest are flags
+        cmd.subcommand = "versi"
+        cmd.args = [t.value for t in tokens]
+
+
+def _parse_catatan(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: catatan <commit> [pesan] | catatan lihat/list/hapus/bersih"""
+    if not tokens:
+        return
+
+    sub = tokens[0].value.lower()
+    if sub in ("lihat", "show", "view", "tampilkan"):
+        cmd.subcommand = "lihat"
+        cmd.args = [t.value for t in tokens[1:]]
+    elif sub in ("list", "daftar", "ls"):
+        cmd.subcommand = "list"
+        cmd.args = [t.value for t in tokens[1:]]
+    elif sub in ("hapus", "delete", "remove", "rm"):
+        cmd.subcommand = "hapus"
+        cmd.args = [t.value for t in tokens[1:]]
+    elif sub in ("bersih", "clear", "clean"):
+        cmd.subcommand = "bersih"
+        cmd.args = [t.value for t in tokens[1:]]
+    else:
+        # Default: treat as commit hash + message
+        cmd.subcommand = "tambah"
+        cmd.args = [t.value for t in tokens]
+
+
+def _parse_git(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: git impor/ekspor [path]"""
+    if not tokens:
+        cmd.subcommand = "help"
+        return
+
+    sub = tokens[0].value.lower()
+    if sub in ("impor", "import", "import"):
+        cmd.subcommand = "impor"
+        cmd.args = [t.value for t in tokens[1:]]
+    elif sub in ("ekspor", "export"):
+        cmd.subcommand = "ekspor"
+        cmd.args = [t.value for t in tokens[1:]]
+    elif sub in ("status",):
+        cmd.subcommand = "status"
+        cmd.args = [t.value for t in tokens[1:]]
+    else:
+        cmd.subcommand = "help"
+        cmd.args = [t.value for t in tokens]
+
+
+def _parse_remote(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: remote [tambah|hapus|ganti|lihat]"""
+    if not tokens:
+        return
+
+    sub = tokens[0].value.lower()
+    sub_map = {
+        "tambah": "tambah",
+        "add": "tambah",
+        "hapus": "hapus",
+        "remove": "hapus",
+        "rm": "hapus",
+        "ganti": "ganti",
+        "set-url": "ganti",
+        "update": "ganti",
+        "lihat": "lihat",
+        "show": "lihat",
+        "info": "lihat",
+        "rename": "rename",
+    }
+    cmd.subcommand = sub_map.get(sub, sub)
+    cmd.args = [t.value for t in tokens[1:]]
+
+
+def _parse_hook(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: hook [list|install|uninstall|sample]"""
+    if not tokens:
+        cmd.subcommand = "list"
+        return
+
+    sub = tokens[0].value.lower()
+    sub_map = {
+        "list": "list",
+        "ls": "list",
+        "install": "install",
+        "uninstall": "uninstall",
+        "hapus": "uninstall",
+        "sample": "sample",
+        "contoh": "sample",
+    }
+    cmd.subcommand = sub_map.get(sub, sub)
+    cmd.args = [t.value for t in tokens[1:]]
+
+
+def _parse_plugin(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: plugin [list|install|uninstall|enable|disable]"""
+    if not tokens:
+        cmd.subcommand = "list"
+        return
+
+    sub = tokens[0].value.lower()
+    sub_map = {
+        "list": "list",
+        "ls": "list",
+        "install": "install",
+        "uninstall": "uninstall",
+        "hapus": "uninstall",
+        "enable": "enable",
+        "aktifkan": "enable",
+        "disable": "disable",
+        "nonaktifkan": "disable",
+        "create": "create",
+        "buat": "create",
     }
     cmd.subcommand = sub_map.get(sub, sub)
     cmd.args = [t.value for t in tokens[1:]]

@@ -58,8 +58,278 @@ from vesi.commands.cmd_version_points import cmd_titik_pulih
 from vesi.commands.cmd_template import cmd_pola_commit
 from vesi.commands.cmd_smart_diff import cmd_bandingkan_pintar
 from vesi.commands.cmd_conflict import cmd_bantu_konflik
+from vesi.commands.cmd_show_commit import cmd_tampilkan_versi
+from vesi.commands.cmd_shortlog import cmd_ringkasan
+from vesi.commands.cmd_graph import cmd_grafik
+from vesi.commands.cmd_describe import cmd_deskripsi
+from vesi.commands.cmd_notes import cmd_catatan
+from vesi.commands.cmd_stash import cmd_stash_branch, cmd_stash_show
+from vesi.commands.cmd_git_import import cmd_impor_git
+from vesi.commands.cmd_git_export import cmd_ekspor_git
+from vesi.commands.cmd_clone import cmd_klon
+from vesi.commands.cmd_push import cmd_kirim
+from vesi.commands.cmd_pull import cmd_ambil_remote
+from vesi.commands.cmd_fetch import cmd_unduh
+from vesi.commands.cmd_remote import cmd_remote
 from vesi.errors.exceptions import InvalidCommandError
 from vesi.parser.parser import ParsedCommand
+
+
+def cmd_hook_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle hook management commands."""
+    from vesi.core.hooks import HookManager
+    from vesi.utils.platform import print_color
+
+    try:
+        from vesi.repository.repository import Repository
+        repo = Repository.find()
+        hook_mgr = HookManager(repo.root)
+    except Exception:
+        from vesi.utils.platform import print_color
+        print_color("Tidak ada repository.", "red")
+        return 1
+
+    sub = parsed.subcommand or "list"
+
+    if sub == "list":
+        hooks = hook_mgr.list_hooks()
+        print_color("Hooks:\n", "cyan")
+        for hook_type, installed in hooks.items():
+            status = "✓" if installed else " "
+            print(f"  [{status}] {hook_type}")
+        return 0
+
+    elif sub == "sample":
+        created = hook_mgr.create_sample_hooks()
+        print_color(f"✓ {len(created)} sample hooks dibuat!", "green")
+        for p in created:
+            print(f"  {p.name}")
+        return 0
+
+    elif sub == "install":
+        if not parsed.args:
+            print("Usage: hook install <type> <script>")
+            return 1
+        hook_type = parsed.args[0]
+        script = parsed.args[1] if len(parsed.args) > 1 else "#!/bin/bash\necho Hook"
+        hook_mgr.install_hook(hook_type, script)
+        print_color(f"✓ Hook '{hook_type}' terinstall!", "green")
+        return 0
+
+    elif sub == "uninstall":
+        if not parsed.args:
+            print("Usage: hook uninstall <type>")
+            return 1
+        hook_type = parsed.args[0]
+        if hook_mgr.uninstall_hook(hook_type):
+            print_color(f"✓ Hook '{hook_type}' dihapus.", "green")
+        else:
+            print(f"Hook '{hook_type}' tidak ditemukan.")
+        return 0
+
+    else:
+        print(hook_mgr.get_hook_help())
+        return 0
+
+
+def cmd_plugin_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle plugin management commands."""
+    from vesi.core.plugin import PluginManager, create_plugin_template
+    from vesi.utils.platform import print_color
+
+    plugin_mgr = PluginManager()
+    sub = parsed.subcommand or "list"
+
+    if sub == "list":
+        plugins = plugin_mgr.list_plugins()
+        if not plugins:
+            print("Tidak ada plugin terinstall.")
+            print("\nBuat plugin baru:")
+            print("  vesi plugin buat my-plugin")
+            return 0
+
+        print_color(f"Plugin ({len(plugins)}):\n", "cyan")
+        for p in plugins:
+            status = "✓" if p.enabled else "✗"
+            print(f"  [{status}] {p.name} v{p.version}")
+            if p.description:
+                print(f"      {p.description}")
+        return 0
+
+    elif sub in ("create", "buat"):
+        if not parsed.args:
+            print("Usage: plugin buat <nama>")
+            return 1
+        name = parsed.args[0]
+        path = create_plugin_template(name)
+        print_color(f"✓ Plugin template dibuat!", "green")
+        print(f"  Lokasi: {path}")
+        print(f"\n  Edit {path}/main.py untuk mengembangkan plugin.")
+        return 0
+
+    elif sub == "install":
+        if not parsed.args:
+            print("Usage: plugin install <path>")
+            return 1
+        from pathlib import Path
+        path = Path(parsed.args[0])
+        info = plugin_mgr.install_plugin(path)
+        if info:
+            print_color(f"✓ Plugin '{info.name}' terinstall!", "green")
+        else:
+            print_color("Gagal install plugin.", "red")
+        return 0
+
+    elif sub == "uninstall":
+        if not parsed.args:
+            print("Usage: plugin uninstall <nama>")
+            return 1
+        name = parsed.args[0]
+        if plugin_mgr.uninstall_plugin(name):
+            print_color(f"✓ Plugin '{name}' dihapus.", "green")
+        else:
+            print(f"Plugin '{name}' tidak ditemukan.")
+        return 0
+
+    elif sub in ("enable", "aktifkan"):
+        if not parsed.args:
+            print("Usage: plugin aktifkan <nama>")
+            return 1
+        name = parsed.args[0]
+        if plugin_mgr.enable_plugin(name):
+            print_color(f"✓ Plugin '{name}' diaktifkan.", "green")
+        return 0
+
+    elif sub in ("disable", "nonaktifkan"):
+        if not parsed.args:
+            print("Usage: plugin nonaktifkan <nama>")
+            return 1
+        name = parsed.args[0]
+        if plugin_mgr.disable_plugin(name):
+            print_color(f"✓ Plugin '{name}' dinonaktifkan.", "green")
+        return 0
+
+    return 0
+
+
+def cmd_watch_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle file watch commands."""
+    from vesi.core.watch import AutoSaveManager
+    from vesi.utils.platform import print_color
+
+    try:
+        from vesi.repository.repository import Repository
+        repo = Repository.find()
+    except Exception:
+        print_color("Tidak ada repository.", "red")
+        return 1
+
+    watch_mgr = AutoSaveManager(repo.root)
+    args = parsed.args or []
+
+    if not args or args[0] == "status":
+        status = watch_mgr.get_status()
+        print_color("Watch Status:\n", "cyan")
+        print(f"  Enabled:    {'✓' if status['enabled'] else '✗'}")
+        print(f"  Interval:   {status['interval_human']}")
+        print(f"  Auto-commit: {'✓' if status['auto_commit'] else '✗'}")
+        return 0
+
+    elif args[0] == "aktifkan" or args[0] == "enable":
+        interval = int(args[1]) if len(args) > 1 else 300
+        watch_mgr.enable(interval)
+        print_color(f"✓ Watch diaktifkan (setiap {interval//60} menit)", "green")
+        return 0
+
+    elif args[0] == "nonaktifkan" or args[0] == "disable":
+        watch_mgr.disable()
+        print_color("✓ Watch dinonaktifkan.", "green")
+        return 0
+
+    return 0
+
+
+def cmd_completion_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle completion commands."""
+    from vesi.core.completion import (
+        generate_bash_completion, generate_zsh_completion,
+        generate_fish_completion, install_completion, get_completion_help,
+    )
+    from vesi.utils.platform import print_color
+
+    args = parsed.args or []
+
+    if not args:
+        print(get_completion_help())
+        return 0
+
+    shell = args[0]
+
+    if shell == "install" and len(args) > 1:
+        target_shell = args[1]
+        path = install_completion(target_shell)
+        print_color(f"✓ Completion terinstall untuk {target_shell}!", "green")
+        print(f"  Lokasi: {path}")
+        return 0
+
+    if shell == "bash":
+        print(generate_bash_completion())
+    elif shell == "zsh":
+        print(generate_zsh_completion())
+    elif shell == "fish":
+        print(generate_fish_completion())
+    else:
+        print(f"Shell '{shell}' tidak didukung.")
+        print("Gunakan: bash, zsh, atau fish")
+        return 1
+
+    return 0
+
+
+def cmd_git_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle 'git' command - dispatch to import/export."""
+    if parsed.subcommand == "impor":
+        return cmd_impor_git(parsed, verbose=verbose, debug=debug)
+    elif parsed.subcommand == "ekspor":
+        return cmd_ekspor_git(parsed, verbose=verbose, debug=debug)
+    else:
+        # Show git bridge help
+        from vesi.utils.platform import print_color
+        print_color("Bridger Git ↔ Vesi\n", "cyan")
+        print("  Impor repository Git ke format Vesi:")
+        print("    git impor [path]        Import .git ke .vesi")
+        print("    git impor --branches    Import semua branch")
+        print()
+        print("  Ekspor repository Vesi ke format Git:")
+        print("    git ekspor [path]       Export .vesi ke .git")
+        print("    git ekspor --all        Export semua branch")
+        print("    git ekspor --bare       Export sebagai bare repo")
+        return 0
 
 
 def cmd_beri(
@@ -224,6 +494,24 @@ COMMANDS: dict[str, callable] = {
     "foto": cmd_foto_otomatis,
     "pesan": cmd_pesan_pintar,
     "titik": cmd_titik_pulih,
+    # New upgraded commands
+    "tampilkan": cmd_tampilkan_versi,
+    "ringkasan": cmd_ringkasan,
+    "grafik": cmd_grafik,
+    "deskripsi": cmd_deskripsi,
+    "catatan": cmd_catatan,
+    # Git bridge
+    "git": cmd_git_handler,
+    # Remote operations
+    "klon": cmd_klon,
+    "kirim": cmd_kirim,
+    "unduh": cmd_unduh,
+    "remote": cmd_remote,
+    # Advanced features
+    "hook": cmd_hook_handler,
+    "plugin": cmd_plugin_handler,
+    "watch": cmd_watch_handler,
+    "completion": cmd_completion_handler,
 }
 
 # Map of verb+subcommand -> handler function
@@ -287,6 +575,29 @@ SUBCOMMANDS: dict[tuple[str, str], callable] = {
     ("titik", "pulih"): cmd_titik_pulih,
     ("titik", "buat"): cmd_titik_pulih,
     ("titik", "hapus"): cmd_titik_pulih,
+    # New upgraded commands
+    ("tampilkan", "versi"): cmd_tampilkan_versi,
+    ("tampilkan", "commit"): cmd_tampilkan_versi,
+    # Notes
+    ("catatan", "tambah"): cmd_catatan,
+    ("catatan", "lihat"): cmd_catatan,
+    ("catatan", "list"): cmd_catatan,
+    ("catatan", "hapus"): cmd_catatan,
+    ("catatan", "bersih"): cmd_catatan,
+    # Tag verify
+    ("verifikasi", "tag"): cmd_catatan,
+    # Git bridge
+    ("git", "impor"): cmd_impor_git,
+    ("git", "import"): cmd_impor_git,
+    ("git", "ekspor"): cmd_ekspor_git,
+    ("git", "export"): cmd_ekspor_git,
+    ("git", "status"): cmd_git_handler,
+    # Remote operations
+    ("remote", "tambah"): cmd_remote,
+    ("remote", "hapus"): cmd_remote,
+    ("remote", "ganti"): cmd_remote,
+    ("remote", "lihat"): cmd_remote,
+    ("remote", "rename"): cmd_remote,
 }
 
 # Suggestion map for similar commands
