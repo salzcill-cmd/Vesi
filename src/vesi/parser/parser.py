@@ -243,6 +243,26 @@ VERB_ALIASES: dict[str, str] = {
     "pelihara": "watch",
     "completion": "completion",
     "selesai": "completion",
+    # New vesi-exclusive commands
+    "pindah file": "pindah file",
+    "mv": "pindah file",
+    "move": "pindah file",
+    "rename": "pindah file",
+    "hapus file": "hapus file",
+    "rm": "hapus file",
+    "remove": "hapus file",
+    "balikkan": "balikkan",
+    "revert": "balikkan",
+    "atur ulang": "atur ulang",
+    "reset": "atur ulang",
+    "bersihkan file": "bersihkan file",
+    "clean": "bersihkan file",
+    "visual": "visual",
+    "visual diff": "visual",
+    "side-by-side": "visual",
+    "suggest": "suggest",
+    "saran": "suggest",
+    "suggest commit": "suggest",
 }
 
 # Subcommand aliases: (verb, sub) -> canonical (verb, sub)
@@ -591,6 +611,32 @@ def parse_command(input_text: str) -> ParsedCommand:
         cmd.args = [t.value for t in regular_tokens[1:]]
     elif verb == "completion":
         cmd.args = [t.value for t in regular_tokens[1:]]
+    elif verb == "pindah":
+        if regular_tokens[1].value.lower() == "file":
+            _parse_pindah_file(cmd, regular_tokens[2:])
+        else:
+            _parse_pindah(cmd, regular_tokens[1:])
+    elif verb == "hapus":
+        if regular_tokens[1].value.lower() == "file":
+            _parse_hapus_file(cmd, regular_tokens[2:])
+        else:
+            _parse_hapus(cmd, regular_tokens[1:])
+    elif verb == "balikkan":
+        _parse_balikkan(cmd, regular_tokens[1:])
+    elif verb == "atur":
+        if len(regular_tokens) > 1 and regular_tokens[1].value.lower() == "ulang":
+            _parse_atur_ulang(cmd, regular_tokens[2:])
+        else:
+            cmd.args = [t.value for t in regular_tokens[1:]]
+    elif verb == "bersihkan":
+        if len(regular_tokens) > 1 and regular_tokens[1].value.lower() == "file":
+            _parse_bersihkan_file(cmd, regular_tokens[2:])
+        else:
+            _parse_bersihkan_file(cmd, regular_tokens[1:])
+    elif verb == "visual":
+        _parse_visual(cmd, regular_tokens[1:])
+    elif verb == "suggest":
+        _parse_suggest(cmd, regular_tokens[1:])
     else:
         cmd.args = [t.value for t in regular_tokens[1:]]
 
@@ -1094,3 +1140,38 @@ def _parse_plugin(cmd: ParsedCommand, tokens: list[Token]) -> None:
     }
     cmd.subcommand = sub_map.get(sub, sub)
     cmd.args = [t.value for t in tokens[1:]]
+
+
+def _parse_pindah_file(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: pindah file <source> <dest>"""
+    cmd.args = [t.value for t in tokens]
+
+
+def _parse_hapus_file(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: hapus file [--cached] <file>"""
+    cmd.args = [t.value for t in tokens]
+
+
+def _parse_balikkan(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: balikkan <commit>"""
+    cmd.args = [t.value for t in tokens]
+
+
+def _parse_atur_ulang(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: atur ulang [--soft|--mixed|--hard] <commit>"""
+    cmd.args = [t.value for t in tokens]
+
+
+def _parse_bersihkan_file(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: bersihkan file [--force]"""
+    cmd.args = [t.value for t in tokens]
+
+
+def _parse_visual(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: visual [file] [--side-by-side]"""
+    cmd.args = [t.value for t in tokens]
+
+
+def _parse_suggest(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: suggest [commit]"""
+    cmd.args = [t.value for t in tokens]

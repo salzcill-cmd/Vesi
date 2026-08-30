@@ -58,6 +58,9 @@ from vesi.commands.cmd_version_points import cmd_titik_pulih
 from vesi.commands.cmd_template import cmd_pola_commit
 from vesi.commands.cmd_smart_diff import cmd_bandingkan_pintar
 from vesi.commands.cmd_conflict import cmd_bantu_konflik
+from vesi.commands.cmd_revert import cmd_balikkan
+from vesi.commands.cmd_mv import cmd_pindah_file
+from vesi.commands.cmd_rm import cmd_hapus_file
 from vesi.commands.cmd_show_commit import cmd_tampilkan_versi
 from vesi.commands.cmd_shortlog import cmd_ringkasan
 from vesi.commands.cmd_graph import cmd_grafik
@@ -261,6 +264,181 @@ def cmd_watch_handler(
         print_color("✓ Watch dinonaktifkan.", "green")
         return 0
 
+    return 0
+
+
+def cmd_pindah_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle pindah command - dispatch to file or cabang."""
+    from vesi.commands.cmd_mv import cmd_pindah_file
+    from vesi.commands.cmd_branch import cmd_pindah_cabang
+
+    # Check if it's 'pindah file' or 'pindah cabang'
+    if parsed.args and parsed.args[0].lower() == "file":
+        # Remove 'file' from args
+        new_parsed = ParsedCommand(
+            verb=parsed.verb,
+            subcommand="file",
+            args=parsed.args[1:],
+            flags=parsed.flags,
+        )
+        return cmd_pindah_file(new_parsed, verbose=verbose, debug=debug)
+    else:
+        # Default to branch
+        return cmd_pindah_cabang(parsed, verbose=verbose, debug=debug)
+
+
+def cmd_atur_ulang_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle atur ulang command."""
+    from vesi.commands.cmd_reset import cmd_atur_ulang
+    return cmd_atur_ulang(parsed, verbose=verbose, debug=debug)
+
+
+def cmd_bersihkan_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle bersihkan command."""
+    from vesi.commands.cmd_clean import cmd_bersihkan
+    return cmd_bersihkan(parsed, verbose=verbose, debug=debug)
+
+
+def cmd_visual_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle visual diff command."""
+    from vesi.core.visual_diff import VisualDiff
+    from vesi.utils.platform import print_color
+
+    try:
+        from vesi.repository.repository import Repository
+        repo = Repository.find()
+    except Exception:
+        print_color("Tidak ada repository.", "red")
+        return 1
+
+    args = parsed.args or []
+    side_by_side = "--side-by-side" in parsed.flags
+    mode = "side-by-side" if side_by_side else "unified"
+
+    if not args:
+        # Show diff of working directory
+        print_color("Visual diff:\n", "cyan")
+        print("Gunakan: visual <file> atau visual --side-by-side <file>")
+        return 0
+
+    filepath = args[0]
+    file_path = repo.root / filepath
+
+    if not file_path.is_file():
+        print_color(f"File '{filepath}' tidak ditemukan.", "red")
+        return 1
+
+    # Get current content
+    current_content = file_path.read_text(encoding="utf-8", errors="replace")
+
+    # Get staged/HEAD content
+    head_hash = repo.get_head_commit()
+    old_content = ""
+    if head_hash:
+        from vesi.core.snapshot import SnapshotManager
+        snapshot_mgr = SnapshotManager(repo)
+        try:
+            tree = snapshot_mgr.get_tree(head_hash)
+            entry = tree.get_entry(filepath)
+            if entry:
+                old_content = repo.blobs.load_content(entry.hash_id).decode("utf-8", errors="replace")
+        except Exception:
+            pass
+
+    differ = VisualDiff(use_color=True)
+
+    if side_by_side:
+        result = differ.side_by_side(old_content, current_content, f"HEAD/{filepath}", f"working/{filepath}")
+    else:
+        result = differ.unified(old_content, current_content, f"HEAD/{filepath}", f"working/{filepath}")
+
+    print(result)
+    return 0
+
+
+def cmd_suggest_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle suggest commit command."""
+    from vesi.core.smart_commit import generate_commit_suggestions
+    from vesi.utils.platform import print_color
+
+    try:
+        from vesi.repository.repository import Repository
+        repo = Repository.find()
+    except Exception:
+        print_color("Tidak ada repository.", "red")
+        return 1
+
+    # Get changed files
+    from vesi.core.change import detect_changes
+    from vesi.core.snapshot import SnapshotManager
+
+    snapshot_mgr = SnapshotManager(repo)
+    index = repo.index.load()
+    head_hash = repo.get_head_commit()
+
+    tree = None
+    if head_hash:
+        try:
+            tree = snapshot_mgr.get_tree(head_hash)
+        except Exception:
+            pass
+
+    changes = detect_changes(repo.root, tree, index or {})
+    changed_files = [c.path for c in changes]
+
+    if not changed_files:
+        print_color("Tidak ada perubahan untuk di-suggest.", "yellow")
+        return 0
+
+    # Get diff content
+    diff_content = ""
+    for change in changes:
+        if change.new_hash:
+            try:
+                file_path = repo.root / change.path
+                if file_path.is_file():
+                    diff_content += file_path.read_text(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+
+    # Generate suggestions
+    suggestions = generate_commit_suggestions(changed_files, diff_content)
+
+    print_color("💡 Saran commit message:\n", "cyan")
+    for i, s in enumerate(suggestions, 1):
+        confidence_bar = "█" * int(s.confidence * 10)
+        print(f"  {i}. {s.message}")
+        print(f"     {s.description}")
+        print(f"     Confidence: {confidence_bar} ({s.confidence:.0%})")
+        print()
+
+    print("Gunakan salah satu:")
+    print(f'  vesi simpan "{suggestions[0].message}"')
     return 0
 
 
@@ -512,6 +690,13 @@ COMMANDS: dict[str, callable] = {
     "plugin": cmd_plugin_handler,
     "watch": cmd_watch_handler,
     "completion": cmd_completion_handler,
+    # New vesi-exclusive commands
+    "pindah": cmd_pindah_handler,
+    "balikkan": cmd_balikkan,
+    "atur": cmd_atur_ulang_handler,
+    "bersihkan": cmd_bersihkan_handler,
+    "visual": cmd_visual_handler,
+    "suggest": cmd_suggest_handler,
 }
 
 # Map of verb+subcommand -> handler function
