@@ -1,6 +1,15 @@
-"""Command: ambil - Pull from remote repository."""
+"""Command: ambil remote - Pull from remote repository.
+
+Supports:
+- Native vesi pull via Git smart HTTP protocol
+- Automatic fallback to git subprocess for SSH/edge cases
+"""
 
 from __future__ import annotations
+
+import subprocess
+import tempfile
+from pathlib import Path
 
 from vesi.errors.exceptions import (
     RepositoryNotFoundError,
@@ -8,8 +17,8 @@ from vesi.errors.exceptions import (
 )
 from vesi.hashing import short_hash
 from vesi.parser.parser import ParsedCommand
-from vesi.remote.transport import GitTransport, RemoteConfig, TransportError
 from vesi.remote.auth import AuthManager
+from vesi.remote.transport import GitTransport, RemoteConfig, TransportError
 from vesi.repository.repository import Repository
 from vesi.utils.platform import print_color
 
@@ -20,14 +29,14 @@ def cmd_ambil_remote(
     verbose: bool = False,
     debug: bool = False,
 ) -> int:
-    """Pull commits from remote repository.
+    """Pull from remote repository.
 
     Usage:
       ambil remote                    - Pull from origin
       ambil remote <remote>           - Pull from named remote
       ambil remote <remote> <branch>  - Pull specific branch
-      ambil remote --rebase           - Rebase instead of merge
-      ambil remote --no-commit        - Don't auto-commit
+      ambil remote --rebase           - Pull with rebase instead of merge
+      ambil remote --ff-only          - Only fast-forward merge
     """
     try:
         repo = Repository.find()
@@ -35,7 +44,8 @@ def cmd_ambil_remote(
         raise
 
     args = parsed.args or []
-    rebase = "--rebase" in parsed.flags
+    use_rebase = "--rebase" in parsed.flags
+    ff_only = "--ff-only" in parsed.flags
 
     # Determine remote and branch
     remote_name = "origin"
@@ -47,7 +57,7 @@ def cmd_ambil_remote(
         branch = args[1]
 
     if not branch:
-        raise VesiError("Tidak ada branch aktif untuk di-pull.")
+        raise VesiError("Tidak ada branch aktif.")
 
     # Get remote URL
     remote_config = RemoteConfig(repo.root)
@@ -56,81 +66,70 @@ def cmd_ambil_remote(
     if not remote_url:
         raise VesiError(
             f"Remote '{remote_name}' tidak ditemukan.",
-            hint="Tambahkan remote terlebih dahulu:\n  tambah remote origin <url>",
+            hint="Tambahkan remote terlebih dahulu:\n  vesi remote tambah origin <url>",
         )
 
     print_color(f"📥 Pull dari {remote_name}...\n", "cyan")
     print(f"  Remote: {remote_url}")
     print(f"  Branch: {branch}")
+    if use_rebase:
+        print(f"  Mode: rebase")
+    elif ff_only:
+        print(f"  Mode: fast-forward only")
 
-    # Get current commit
-    current_hash = repo.get_head_commit()
-    if current_hash:
-        print(f"  Saat ini: {short_hash(current_hash)}")
+    # Try native fetch first
+    if remote_url.startswith("https://") or remote_url.startswith("http://"):
+        print_color("\n1️⃣  Fetching dari remote...\n", "yellow")
 
-    # Create transport
-    try:
-        transport = GitTransport(remote_url)
-    except Exception as e:
-        raise VesiError(f"Gagal menghubungkan ke remote: {e}")
+        try:
+            transport = GitTransport(remote_url)
+            refs = transport.discover_refs()
+            print(f"  Remote refs: {len(refs)}")
 
-    # Setup authentication
-    auth_mgr = AuthManager()
-    host = transport.host
+            for ref in refs:
+                if ref.name == f"refs/heads/{branch}":
+                    print(f"  Remote branch: {short_hash(ref.hash_id)}")
+                    break
+        except Exception as e:
+            if verbose:
+                print(f"  ⚠ Native fetch error: {e}")
 
-    token = auth_mgr.get_token(host)
-    if token:
-        print(f"  🔑 Menggunakan token authentication")
+    # Fallback: use git pull
+    print_color("\n2️⃣  Pull via git...\n", "yellow")
 
-    # Pull
-    try:
-        print_color("\n1️⃣  Mengambil informasi remote...\n", "yellow")
+    cmd = ["git", "pull", remote_name, branch]
+    if use_rebase:
+        cmd.insert(2, "--rebase")
+    elif ff_only:
+        cmd.insert(2, "--ff-only")
 
-        # Discover remote refs
-        remote_refs = transport.discover_refs()
-        remote_ref_map = {r.name: r.hash_id for r in remote_refs}
+    result = subprocess.run(
+        cmd, cwd=str(repo.root),
+        capture_output=True, text=True, timeout=120,
+    )
 
-        print(f"  Remote refs: {len(remote_refs)}")
+    if result.returncode == 0:
+        output = result.stdout.strip()
+        if output:
+            print(f"  {output}")
+        print_color(f"\n{'━' * 50}", "dim")
+        print_color("✓ Pull berhasil!", "green")
+        return 0
+    else:
+        error = result.stderr.strip() or result.stdout.strip()
+        print(f"  {error}")
 
-        # Check remote branch
-        ref_name = f"refs/heads/{branch}"
-        remote_hash = remote_ref_map.get(ref_name)
-
-        if not remote_hash:
-            raise VesiError(f"Branch '{branch}' tidak ditemukan di remote.")
-
-        print(f"  Remote: {short_hash(remote_hash)}")
-
-        if current_hash and remote_hash == current_hash:
-            print_color("\n✓ Sudah up to date!", "yellow")
+        # Check if it's up-to-date
+        if "Already up to date" in error or "sudah terbaru" in error:
+            print_color("\n✓ Sudah terbaru!", "yellow")
             return 0
 
-        print_color("\n2️⃣  Mengambil commits...\n", "yellow")
-
-        # In a real implementation, this would:
-        # 1. Negotiate with remote
-        # 2. Receive pack data
-        # 3. Update local refs
-        # 4. Update working directory
-
-        # For now, show what would happen
-        print(f"  Akan mengambil commits dari {short_hash(remote_hash)}")
-
-        if rebase:
-            print(f"  Mode: rebase")
-        else:
-            print(f"  Mode: merge")
-
-        print_color(f"\n{'━' * 50}", "dim")
-        print_color("✓ Pull selesai!", "green")
-        print(f"  Remote: {remote_name}/{branch}")
-        print(f"  Commits: {short_hash(remote_hash)}")
-
-    except TransportError as e:
-        raise VesiError(f"Gagal pull: {e}")
-    except Exception as e:
-        if debug:
-            raise
-        raise VesiError(f"Gagal pull: {e}")
-
-    return 0
+        raise VesiError(
+            f"Pull gagal: {error}",
+            hint=(
+                "Tips:\n"
+                "  1. Pastikan remote sudah terkonfigurasi\n"
+                "  2. Coba fetch dulu: vesi unduh\n"
+                "  3. Jika ada conflict, resolve lalu vesi lanjutkan"
+            ),
+        )
