@@ -303,27 +303,19 @@ class GitSmartHTTPClient:
 
         # Build the request body
         # Use protocol v1 format for push (v2 info/refs, v1 receive-pack)
+        # GitHub requires raw pack data (not side-band wrapped) for push
         request = io.BytesIO()
 
         # Command batch (with capabilities on first line)
         first_cmd = commands[0]
-        caps = "report-status delete-refs side-band-64k quiet"
+        caps = "report-status delete-refs"
         request.write(pkt_line(f"{first_cmd} {caps}".encode()))
         for cmd in commands[1:]:
             request.write(pkt_line(cmd.encode()))
         request.write(flush_pkt())
 
-        # Pack data with side-band-64k wrapping
-        chunk_size = 65520  # 64K - overhead
-        pos = 0
-        while pos < len(pack_data):
-            chunk = pack_data[pos:pos+chunk_size]
-            # Channel 1 = pack data
-            sideband_pkt = b"\x01" + chunk
-            request.write(pkt_line(sideband_pkt))
-            pos += chunk_size
-
-        request.write(flush_pkt())
+        # Send raw pack data (no side-band wrapping - GitHub requires this)
+        request.write(pack_data)
 
         # Send to git-receive-pack (v1 format - no Git-Protocol header)
         status, body = self._request(

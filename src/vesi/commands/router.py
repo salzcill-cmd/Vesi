@@ -635,6 +635,28 @@ def cmd_pindah_cepat_handler(
         return cmd_pindah_cabang(parsed, verbose=verbose, debug=debug)
 
 
+def cmd_rerere_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle rerere commands."""
+    from vesi.commands.cmd_rerere import cmd_rerere
+    return cmd_rerere(parsed, verbose=verbose, debug=debug)
+
+
+def cmd_sebagian_handler(
+    parsed: ParsedCommand,
+    *,
+    verbose: bool = False,
+    debug: bool = False,
+) -> int:
+    """Handle sparse checkout commands."""
+    from vesi.commands.cmd_sparse import cmd_sebagian
+    return cmd_sebagian(parsed, verbose=verbose, debug=debug)
+
+
 # Map of verb -> handler function (for simple commands)
 COMMANDS: dict[str, callable] = {
     "mulai": cmd_mulai_proyek,
@@ -697,6 +719,10 @@ COMMANDS: dict[str, callable] = {
     "bersihkan": cmd_bersihkan_handler,
     "visual": cmd_visual_handler,
     "suggest": cmd_suggest_handler,
+    # Rerere
+    "ulang": cmd_rerere_handler,
+    # Sparse checkout
+    "sebagian": cmd_sebagian_handler,
 }
 
 # Map of verb+subcommand -> handler function

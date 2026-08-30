@@ -257,6 +257,12 @@ VERB_ALIASES: dict[str, str] = {
     "reset": "atur ulang",
     "bersihkan file": "bersihkan file",
     "clean": "bersihkan file",
+    # Rerere commands
+    "ulang": "ulang",
+    "rerere": "ulang",
+    # Sparse checkout commands
+    "sebagian": "sebagian",
+    "sparse": "sebagian",
     "visual": "visual",
     "visual diff": "visual",
     "side-by-side": "visual",
