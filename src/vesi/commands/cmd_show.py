@@ -94,6 +94,32 @@ def cmd_isi(
 
 def _resolve_version(repo: Repository, version_id: str) -> str:
     """Resolve a version ID to full hash."""
+    version_str = version_id.strip()
+
+    # Handle HEAD and HEAD~N
+    if version_str.upper().startswith("HEAD"):
+        base_hash = repo.get_head_commit()
+        if not base_hash:
+            raise VersionNotFoundError(version_id)
+        if version_str.upper() == "HEAD":
+            return base_hash
+        if "~" in version_str:
+            try:
+                n = int(version_str.split("~")[1])
+            except (ValueError, IndexError):
+                raise VersionNotFoundError(version_id)
+            snapshot_mgr = SnapshotManager(repo)
+            current = base_hash
+            for _ in range(n):
+                try:
+                    parent = snapshot_mgr.get_parent(current)
+                    if not parent:
+                        raise VersionNotFoundError(version_id)
+                    current = parent
+                except Exception:
+                    raise VersionNotFoundError(version_id)
+            return current
+
     snapshot_mgr = SnapshotManager(repo)
 
     if repo.objects.exists(version_id):

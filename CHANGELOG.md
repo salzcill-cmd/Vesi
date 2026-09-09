@@ -17,6 +17,7 @@ dan project ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 - **Custom alias benar-benar dieksekusi** (PRD 56) - Alias yang dibuat via `alias tambah` kini dipakai saat mengetik perintah; alias tidak pernah menimpa perintah baku
 - **`alias tambah|hapus|list` di-parse sebagai subcommand** - Memperbaiki pemanggilan `alias tambah <nama> <cmd>`
 - **`simpan versi` menampilkan `Ukuran: X KB`**
+- **16 test baru** untuk tag, show, revert, mv, rm, show_commit (`test_untested_commands.py`)
 
 ### Changed
 - `mulai proyek` pada repository yang sudah ada kini **warning** (bukan error), sesuai PRD 16.1
@@ -25,6 +26,15 @@ dan project ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 ### Fixed
 - `--json` tidak lagi no-op; kini menghasilkan output JSON murni
 - Custom alias (ditulis ke `aliases.json`) sebelumnya tidak pernah dibaca oleh parser
+- **Parser bug: `hapus file` dan `pindah file`** — subcommand `file` tidak dikenali, routing salah ke `cabang`
+- **Parser bug: `verifikasi tag`** — routing ke `cmd_catatan` (catatan) bukan `cmd_verify_tag`
+- **Router bug: duplikat key `pindah`** — `cmd_pindah_cepat_handler` adalah dead code
+- **Parser bug: `tampilkan versi`** — mapped ke `isi` bukan `tampilkan` (menyebabkan routing salah)
+- **Parser bug: `beri tag -a -m`** — flag `-a`/`-m` tidak diekstrak dari args (lexer hanya handle `--`)
+- `commands/__init__.py` diekspor lengkap (60+ command, sebelumnya hanya 18)
+- Hapus slang aliases (`gas`, `gaskeun`, `udah`, `done`, `slesai`, `batalin`, `urungkan`, `gak jadi`, `liat`) sesuai PRD §104
+- Bersihkan duplikat entry di `_fix_typos` dan self-mapping di `VERB_ALIASES`
+- `isi` command: `_resolve_version` sekarang handle `HEAD` dan `HEAD~N`
 
 
 ## [0.5.0] - 2026-09-09

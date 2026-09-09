@@ -22,7 +22,7 @@ from vesi.commands.cmd_config import cmd_konfigurasi
 from vesi.commands.cmd_help import cmd_bantuan
 from vesi.commands.cmd_explain import cmd_jelaskan
 from vesi.commands.cmd_belajar import cmd_belajar
-from vesi.commands.cmd_tag import cmd_beri_tag, cmd_lihat_tag, cmd_hapus_tag
+from vesi.commands.cmd_tag import cmd_beri_tag, cmd_lihat_tag, cmd_hapus_tag, cmd_verify_tag
 from vesi.commands.cmd_show import cmd_isi
 from vesi.commands.cmd_search import cmd_cari
 from vesi.commands.cmd_amend import cmd_simpan_amend
@@ -692,7 +692,6 @@ COMMANDS: dict[str, callable] = {
     "asisten": cmd_asisten_gabung,
     "batalkan": cmd_batalkan_semua_handler,
     "kembali": cmd_kembali_handler,
-    "pindah": cmd_pindah_cepat_handler,
     "foto": cmd_foto_otomatis,
     "pesan": cmd_pesan_pintar,
     "titik": cmd_titik_pulih,
@@ -739,6 +738,7 @@ SUBCOMMANDS: dict[tuple[str, str], callable] = {
     ("hapus", "cabang"): cmd_hapus_cabang,
     ("hapus", "tag"): cmd_hapus_tag,
     ("hapus", "stash"): cmd_hapus_stash,
+    ("hapus", "file"): cmd_hapus_file,
     ("batalkan", "perubahan"): cmd_batalkan_perubahan,
     ("batalkan", "gabungan"): cmd_batalkan_gabungan,
     ("lanjutkan", "gabungan"): cmd_lanjutkan_gabungan,
@@ -779,6 +779,7 @@ SUBCOMMANDS: dict[tuple[str, str], callable] = {
     ("batalkan", "semua"): cmd_batalkan_semua,
     ("kembali", "ke waktu"): cmd_kembali_ke_waktu,
     ("pindah", "cepat"): cmd_pindah_cepat,
+    ("pindah", "file"): cmd_pindah_file,
     ("foto", "otomatis"): cmd_foto_otomatis,
     ("foto", "lihat"): cmd_foto_otomatis,
     ("foto", "pulihkan"): cmd_foto_otomatis,
@@ -798,7 +799,7 @@ SUBCOMMANDS: dict[tuple[str, str], callable] = {
     ("catatan", "hapus"): cmd_catatan,
     ("catatan", "bersih"): cmd_catatan,
     # Tag verify
-    ("verifikasi", "tag"): cmd_catatan,
+    ("verifikasi", "tag"): cmd_verify_tag,
     # Git bridge
     ("git", "impor"): cmd_impor_git,
     ("git", "import"): cmd_impor_git,

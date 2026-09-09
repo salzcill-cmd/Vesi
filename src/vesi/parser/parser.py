@@ -119,7 +119,6 @@ VERB_ALIASES: dict[str, str] = {
     "isi": "isi",
     "show": "isi",
     "cat": "isi",
-    "tampilkan": "isi",
     "cari": "cari",
     "search": "cari",
     "grep": "cari",
@@ -127,44 +126,24 @@ VERB_ALIASES: dict[str, str] = {
     # Stash commands
     "sementara": "simpan sementara",
     "stash": "simpan sementara",
-    # Bahasa gaul / casual
-    "gas": "simpan",
-    "gaskeun": "simpan",
-    "udah": "simpan",
-    "done": "simpan",
-    "slesai": "simpan",
-    "selesai": "simpan",
-    "batalin": "batalkan",
-    "urungkan": "batalkan",
-    "gak jadi": "batalkan",
     "lupa": "lihat riwayat",
-    "kemana": "lihat riwayat",
     "terakhir": "lihat riwayat",
     "sebelumnya": "lihat riwayat",
-    "liat": "lihat perubahan",
-    "cek": "cek",
-    "pp": "lihat perubahan",
-    "brp": "lihat riwayat",
     "pop": "ambil",
     # Rebase commands
-    "susun": "susun",
     "rebase": "susun",
     "squash": "susun",
     # Cherry-pick
     "cherry": "ambil",
     "pick": "ambil",
     # Blame
-    "siapa": "siapa",
     "blame": "siapa",
     "annotate": "siapa",
     # Bisect
-    "bagi": "bagi",
     "bisect": "bagi",
     # Reflog
-    "jejak": "jejak",
     "reflog": "jejak",
     # Worktree
-    "folder": "folder",
     "worktree": "folder",
     # New commands
     "undo": "batalkan versi",
@@ -193,33 +172,23 @@ VERB_ALIASES: dict[str, str] = {
     "help": "bantu",
     # Advanced features
     "wizard": "simpan interaktif",
-    "statistik": "statistik",
     "stats": "statistik",
-    "auto": "auto",
     "autosave": "auto",
     "ekspor": "ekspor",
     "export": "ekspor",
     "impor": "impor",
     "import": "impor",
-    "alias": "alias",
     "aliases": "alias",
-    "kunci": "kunci",
     "lock": "kunci",
     "asisten": "asisten",
     "assistant": "asisten",
     # New upgraded commands
-    "tampilkan": "tampilkan",
     "show": "tampilkan",
-    "ringkasan": "ringkasan",
     "shortlog": "ringkasan",
-    "grafik": "grafik",
     "graph": "grafik",
-    "deskripsi": "deskripsi",
     "describe": "deskripsi",
     "gabung": "gabungkan",
-    "catatan": "catatan",
     "notes": "catatan",
-    "verifikasi": "verifikasi",
     "verify": "verifikasi",
     "bersihkan": "bersihkan",
     "gc": "bersihkan",
@@ -353,38 +322,24 @@ CABANG_OPERATIONS: dict[str, tuple[str, str]] = {
 
 def _fix_typos(word: str) -> str:
     """Fix common typos in commands."""
-    # Common typos and their corrections
     typo_map = {
-        "simpann": "simpan",
         "simpann": "simpan",
         "statuss": "status",
         "stauts": "status",
-        "stauts": "status",
         "riwayatt": "riwayat",
-        "riwayat": "riwayat",
         "cabangg": "cabang",
         "gabungg": "gabung",
-        "gabungkan": "gabungkan",
-        "bandingkan": "bandingkan",
-        "bandingkan": "bandingkan",
-        "pulihkan": "pulihkan",
-        "batalkan": "batalkan",
-        "konfigurasi": "konfigurasi",
-        "jelaskan": "jelaskan",
-        "mulai": "mulai",
-        "mulai": "mulai",
     }
-    
-    # Check for exact match first
+
     if word in typo_map:
         return typo_map[word]
-    
-    # Check for common patterns
-    if word.endswith("n") and word[:-1] in VERB_ALIASES:
-        return word[:-1]
+
+    # Strip trailing 'n' or 'nn' if the stem is a known verb
     if word.endswith("nn") and word[:-2] in VERB_ALIASES:
         return word[:-2]
-    
+    if word.endswith("n") and word[:-1] in VERB_ALIASES:
+        return word[:-1]
+
     return word
 
 
@@ -761,11 +716,14 @@ def _parse_buat(cmd: ParsedCommand, tokens: list[Token]) -> None:
 
 
 def _parse_pindah(cmd: ParsedCommand, tokens: list[Token]) -> None:
-    """Parse: pindah cabang <nama>"""
+    """Parse: pindah cabang <nama> | pindah file <source> <dest>"""
     if tokens:
         sub = tokens[0].value.lower()
         if sub in ("cabang", "branch"):
             cmd.subcommand = "cabang"
+            cmd.args = [t.value for t in tokens[1:]]
+        elif sub in ("file",):
+            cmd.subcommand = "file"
             cmd.args = [t.value for t in tokens[1:]]
         else:
             cmd.subcommand = "cabang"
@@ -773,7 +731,7 @@ def _parse_pindah(cmd: ParsedCommand, tokens: list[Token]) -> None:
 
 
 def _parse_hapus(cmd: ParsedCommand, tokens: list[Token]) -> None:
-    """Parse: hapus cabang <nama> | hapus tag <nama> | hapus stash"""
+    """Parse: hapus cabang <nama> | hapus tag <nama> | hapus stash | hapus file <file>"""
     if tokens:
         sub = tokens[0].value.lower()
         if sub in ("cabang", "branch"):
@@ -785,8 +743,10 @@ def _parse_hapus(cmd: ParsedCommand, tokens: list[Token]) -> None:
         elif sub in ("stash",):
             cmd.subcommand = "stash"
             cmd.args = [t.value for t in tokens[1:]]
+        elif sub in ("file",):
+            cmd.subcommand = "file"
+            cmd.args = [t.value for t in tokens[1:]]
         else:
-            # Default: treat as cabang with the first token as the branch name
             cmd.subcommand = "cabang"
             cmd.args = [t.value for t in tokens]
 
@@ -828,15 +788,32 @@ def _parse_lanjutkan(cmd: ParsedCommand, tokens: list[Token]) -> None:
 
 
 def _parse_beri(cmd: ParsedCommand, tokens: list[Token]) -> None:
-    """Parse: beri tag <nama> [pesan]"""
+    """Parse: beri tag [-a] [-m <pesan>] <nama>"""
     if tokens:
         sub = tokens[0].value.lower()
         if sub in ("tag", "label"):
             cmd.subcommand = "tag"
-            cmd.args = [t.value for t in tokens[1:]]
+            remaining = tokens[1:]
         else:
             cmd.subcommand = "tag"
-            cmd.args = [t.value for t in tokens]
+            remaining = tokens
+
+        # Extract short flags that the lexer doesn't catch
+        i = 0
+        while i < len(remaining):
+            val = remaining[i].value
+            if val == "-a":
+                cmd.flags.append("--annotated")
+                i += 1
+            elif val == "-m" and i + 1 < len(remaining):
+                cmd.flags.append(f"--message={remaining[i + 1].value}")
+                i += 2
+            elif val == "-f":
+                cmd.flags.append("--force")
+                i += 1
+            else:
+                cmd.args.append(val)
+                i += 1
 
 
 def _parse_isi(cmd: ParsedCommand, tokens: list[Token]) -> None:
