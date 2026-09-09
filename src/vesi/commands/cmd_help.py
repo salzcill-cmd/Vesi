@@ -111,6 +111,14 @@ ALIAS: help, ?
 CONTOH:
     bantuan
     bantuan simpan""",
+    "belajar": """NAMA: belajar
+TUJUAN: Tutorial interaktif - belajar vesi dengan melakukan
+SINTAKS: belajar [judul] | belajar --reset
+ALIAS: learn, tutorial, bimbingan
+CONTOH:
+    belajar                 Lihat daftar pelajaran + progres
+    belajar simpan          Mulai pelajaran 'menyimpan versi'
+    belajar --reset         Hapus progres belajar""",
     "jelaskan": """NAMA: jelaskan
 TUJUAN: Menjelaskan konsep version control
 SINTAKS: jelaskan <konsep>
@@ -416,7 +424,8 @@ def cmd_bantuan(
     print("  asisten gabung          Merge assistant\n")
     print("  ── Lainnya ──")
     print("  bantuan                 Tampilkan bantuan ini (= help)")
-    print("  jelaskan <konsep>       Pelajari konsep (= explain)\n")
+    print("  jelaskan <konsep>       Pelajari konsep (= explain)")
+    print("  belajar                 Tutorial interaktif (= learn)\n")
     print("Gunakan 'vesi bantuan <command>' untuk detail.\n")
     print("Opsi:")
     print("  --version               Tampilkan versi")

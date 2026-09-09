@@ -75,10 +75,10 @@ class TestInitWorkflow:
         assert (temp_dir / ".abaikan").is_file()
 
     def test_init_already_exists(self, temp_dir):
-        """Test mulai proyek when repo already exists."""
+        """Test mulai proyek when repo already exists (warns, PRD 16.1)."""
         run_vesi(["mulai"], temp_dir)
         result = run_vesi(["mulai"], temp_dir)
-        assert result.returncode != 0
+        assert result.returncode == 0
 
 
 class TestStatusWorkflow:

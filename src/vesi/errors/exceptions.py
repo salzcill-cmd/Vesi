@@ -9,6 +9,9 @@ from __future__ import annotations
 class VesiError(Exception):
     """Base exception for all vesi errors."""
 
+    # Process exit code (see PRD 53).
+    exit_code: int = 1
+
     def __init__(self, message: str, hint: str | None = None) -> None:
         super().__init__(message)
         self.hint = hint
@@ -16,6 +19,8 @@ class VesiError(Exception):
 
 class RepositoryNotFoundError(VesiError):
     """Raised when no repository is found in the current directory or parents."""
+
+    exit_code = 3
 
     def __init__(self) -> None:
         super().__init__(
@@ -27,6 +32,8 @@ class RepositoryNotFoundError(VesiError):
 class RepositoryAlreadyExistsError(VesiError):
     """Raised when trying to init a repo in a directory that already has one."""
 
+    exit_code = 3
+
     def __init__(self) -> None:
         super().__init__(
             "Sudah ada repository di sini. Tidak perlu dibuat lagi.",
@@ -34,6 +41,9 @@ class RepositoryAlreadyExistsError(VesiError):
 
 
 class InvalidCommandError(VesiError):
+    """Raised when the user types a command that doesn't exist."""
+
+    exit_code = 2
     """Raised when the user types a command that doesn't exist."""
 
     def __init__(self, command: str, suggestion: str | None = None) -> None:
@@ -49,6 +59,8 @@ class InvalidCommandError(VesiError):
 class MissingArgumentError(VesiError):
     """Raised when a required argument is not provided."""
 
+    exit_code = 2
+
     def __init__(self, command: str, expected: str, example: str | None = None) -> None:
         msg = f"Command '{command}' memerlukan {expected}."
         hint = None
@@ -60,6 +72,8 @@ class MissingArgumentError(VesiError):
 class NoChangesError(VesiError):
     """Raised when trying to save but there are no changes."""
 
+    exit_code = 2
+
     def __init__(self) -> None:
         super().__init__(
             "Tidak ada perubahan yang perlu disimpan. File sudah dalam keadaan terakhir yang tersimpan.",
@@ -68,6 +82,8 @@ class NoChangesError(VesiError):
 
 class NoStagedChangesError(VesiError):
     """Raised when trying to commit but nothing is staged."""
+
+    exit_code = 2
 
     def __init__(self) -> None:
         super().__init__(
@@ -78,12 +94,16 @@ class NoStagedChangesError(VesiError):
 class FileNotFoundError(VesiError):
     """Raised when a referenced file doesn't exist."""
 
+    exit_code = 2
+
     def __init__(self, filename: str) -> None:
         super().__init__(f"File '{filename}' tidak ditemukan.")
 
 
 class FileNotTrackedError(VesiError):
     """Raised when operating on a file that isn't tracked by the repository."""
+
+    exit_code = 2
 
     def __init__(self, filename: str) -> None:
         super().__init__(
@@ -93,6 +113,8 @@ class FileNotTrackedError(VesiError):
 
 class VersionNotFoundError(VesiError):
     """Raised when a version/commit ID is not found."""
+
+    exit_code = 2
 
     def __init__(self, version_id: str) -> None:
         super().__init__(
@@ -104,6 +126,8 @@ class VersionNotFoundError(VesiError):
 class BranchNotFoundError(VesiError):
     """Raised when a branch doesn't exist."""
 
+    exit_code = 2
+
     def __init__(self, branch_name: str) -> None:
         super().__init__(f"Cabang '{branch_name}' tidak ditemukan.")
 
@@ -111,12 +135,16 @@ class BranchNotFoundError(VesiError):
 class BranchAlreadyExistsError(VesiError):
     """Raised when trying to create a branch that already exists."""
 
+    exit_code = 2
+
     def __init__(self, branch_name: str) -> None:
         super().__init__(f"Cabang '{branch_name}' sudah ada.")
 
 
 class CannotDeleteActiveBranchError(VesiError):
     """Raised when trying to delete the currently active branch."""
+
+    exit_code = 2
 
     def __init__(self, branch_name: str) -> None:
         super().__init__(
@@ -128,6 +156,8 @@ class CannotDeleteActiveBranchError(VesiError):
 class UnmergedBranchWarning(VesiError):
     """Raised when deleting a branch that hasn't been merged (non-fatal)."""
 
+    exit_code = 2
+
     def __init__(self, branch_name: str) -> None:
         super().__init__(
             f"Cabang '{branch_name}' belum digabungkan ke cabang manapun.",
@@ -137,6 +167,8 @@ class UnmergedBranchWarning(VesiError):
 
 class ConflictError(VesiError):
     """Raised when a merge has conflicts."""
+
+    exit_code = 4
 
     def __init__(self, files: list[str]) -> None:
         file_list = "\n    ".join(files)
@@ -152,6 +184,8 @@ class ConflictError(VesiError):
 
 class IntegrityError(VesiError):
     """Raised when repository integrity check fails."""
+
+    exit_code = 5
 
     def __init__(self, details: str) -> None:
         super().__init__(f"Kerusakan repository terdeteksi!\n\n{details}")
@@ -180,6 +214,8 @@ class DiskFullError(VesiError):
 class LockError(VesiError):
     """Raised when another process holds the repository lock."""
 
+    exit_code = 3
+
     def __init__(self, lock_info: str) -> None:
         super().__init__(
             f"Repository sedang digunakan oleh proses lain.\n    {lock_info}",
@@ -190,12 +226,16 @@ class LockError(VesiError):
 class ConfigError(VesiError):
     """Raised on configuration issues."""
 
+    exit_code = 3
+
     def __init__(self, message: str) -> None:
         super().__init__(message)
 
 
 class AbortOperationError(VesiError):
     """Raised when user aborts an operation (Ctrl+C, answering N)."""
+
+    exit_code = 6
 
     def __init__(self) -> None:
         super().__init__("Operasi dibatalkan.")

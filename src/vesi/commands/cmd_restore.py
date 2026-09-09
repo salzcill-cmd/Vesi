@@ -122,7 +122,12 @@ def cmd_batalkan_perubahan(
     verbose: bool = False,
     debug: bool = False,
 ) -> int:
-    """Discard changes to a file (revert to last committed version)."""
+    """Discard changes to a file (revert to last committed version).
+
+    Usage:
+      batalkan perubahan <file>       - Discard changes
+      batalkan perubahan --dry-run <file> - Preview what would be lost
+    """
     try:
         repo = Repository.find()
     except RepositoryNotFoundError:
@@ -135,6 +140,7 @@ def cmd_batalkan_perubahan(
         )
 
     filepath = parsed.args[0]
+    dry_run = "--dry-run" in parsed.flags
     target_path = repo.root / filepath
 
     # Check if file is tracked
@@ -166,6 +172,14 @@ def cmd_batalkan_perubahan(
         if current_hash == entry.hash_id:
             print(f"✓ File '{filepath}' tidak memiliki perubahan.")
             return 0
+
+    if dry_run:
+        print_color("🔍 Dry-run: preview pembatalan perubahan.", "cyan")
+        print(f"  File: {filepath}")
+        print("  Perubahan lokal akan dibuang dan file dikembalikan")
+        print(f"  ke versi terakhir yang tersimpan.")
+        print("\n  Jalankan tanpa --dry-run untuk menerapkan.")
+        return 0
 
     # Show what will be lost and confirm
     print(f"⚠ Perubahan pada '{filepath}' akan dibatalkan.")

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import platform
 import sys
 from pathlib import Path
@@ -11,7 +12,52 @@ from vesi import __version__
 from vesi.parser.parser import parse_command
 from vesi.commands.router import route_command
 from vesi.errors.exceptions import VesiError
+from vesi.utils.logging_setup import setup_logging
 from vesi.utils.platform import print_color
+
+logger = logging.getLogger("vesi")
+
+# Custom alias expansion (PRD 56).
+def _expand_custom_alias(input_text: str) -> str:
+    """Replace a leading custom alias with its command expansion.
+
+    Custom aliases never override canonical commands or built-in aliases.
+    Returns the (possibly unchanged) input string.
+    """
+    if not input_text:
+        return input_text
+
+    first = input_text.split(None, 1)[0].lower()
+
+    # Canonical verbs and single-word aliases take precedence (rule 1).
+    from vesi.parser.parser import VERB_ALIASES, SINGLE_WORD_ALIASES
+    if first in VERB_ALIASES or first in SINGLE_WORD_ALIASES:
+        return input_text
+
+    from vesi.utils.paths import get_repo_root
+    root = get_repo_root()
+    if root is None:
+        return input_text
+
+    alias_file = root / ".vesi" / "aliases.json"
+    if not alias_file.is_file():
+        return input_text
+
+    try:
+        aliases = json.loads(alias_file.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return input_text
+
+    if first not in aliases:
+        return input_text
+
+    expansion = str(aliases[first]).strip()
+    if not expansion:
+        return input_text
+
+    rest = input_text.split(None, 1)[1] if " " in input_text else ""
+    return " ".join(part for part in [expansion, rest] if part)
+
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -40,8 +86,11 @@ def main(argv: list[str] | None = None) -> int:
         _print_welcome()
         return 0
 
+    # Expand custom aliases from the repository before parsing (PRD 56: rule 1 —
+    # custom aliases never override canonical commands).
+    input_text = _expand_custom_alias(" ".join(argv))
+
     # Parse and route command
-    input_text = " ".join(argv)
     parsed = parse_command(input_text)
 
     # Check for global flags
@@ -49,24 +98,43 @@ def main(argv: list[str] | None = None) -> int:
     debug = "--debug" in argv
     json_output = "--json" in argv
 
+    setup_logging(debug=debug)
+
     try:
+        if json_output:
+            import io
+            from contextlib import redirect_stdout
+
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                exit_code = route_command(parsed, verbose=verbose, debug=debug)
+            # Deterministic, machine-readable envelope on success (PRD 54).
+            print(json.dumps({
+                "success": exit_code == 0,
+                "command": parsed.full_command or parsed.raw,
+                "exit_code": exit_code,
+                "output": buf.getvalue().rstrip("\n"),
+            }, ensure_ascii=False))
+            return exit_code
         exit_code = route_command(parsed, verbose=verbose, debug=debug)
         return exit_code
     except VesiError as e:
+        exit_code = getattr(e, "exit_code", 1)
         if json_output:
             print(json.dumps({
                 "error": True,
                 "message": str(e),
                 "hint": e.hint,
-                "exit_code": 1,
-            }))
+                "exit_code": exit_code,
+            }, ensure_ascii=False))
         else:
             _print_error(e)
-        return 1
+        return exit_code
     except KeyboardInterrupt:
         print()
         return 130
     except Exception as e:
+        logger.exception("Unhandled exception")
         if debug:
             raise
         if json_output:
@@ -74,7 +142,7 @@ def main(argv: list[str] | None = None) -> int:
                 "error": True,
                 "message": str(e),
                 "exit_code": 1,
-            }))
+            }, ensure_ascii=False))
         else:
             print_color(f"✗ Terjadi kesalahan tak terduga: {e}", "red")
         return 1

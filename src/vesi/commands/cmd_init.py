@@ -44,7 +44,12 @@ def cmd_mulai_proyek(
         return 0
 
     except RepositoryAlreadyExistsError:
-        raise
+        # PRD 16.1: initializing an existing repo is informational, not an error.
+        vesi_dir = target / ".vesi"
+        print_color("⚠ Repository sudah ada di sini.", "yellow")
+        print(f"  Lokasi: {target}")
+        print("  Tidak ada perubahan yang dilakukan.")
+        return 0
     except PermissionError:
         raise VesiError(
             f"Tidak bisa membuat folder di {target}",

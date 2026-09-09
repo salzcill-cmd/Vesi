@@ -79,7 +79,7 @@ class TestCmdInit:
         assert vesi_dir.is_dir()
         assert (vesi_dir / "objects").is_dir()
         assert (vesi_dir / "refs").is_dir()
-        assert (vesi_dir / "config").is_file()
+        assert (vesi_dir / "config.json").is_file()
         assert (repo / ".abaikan").is_file()
 
     def test_init_creates_head(self, repo):
@@ -93,9 +93,10 @@ class TestCmdInit:
         assert branch_path.is_file()
 
     def test_init_already_exists(self, repo):
-        with pytest.raises(RepositoryAlreadyExistsError):
-            parsed = parse_command("mulai proyek")
-            cmd_mulai_proyek(parsed)
+        # PRD 16.1: re-initializing an existing repo warns instead of failing.
+        parsed = parse_command("mulai proyek")
+        code = cmd_mulai_proyek(parsed)
+        assert code == 0
 
 
 class TestCmdStatus:

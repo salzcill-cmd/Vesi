@@ -78,10 +78,11 @@ class Repository:
         return repo
 
     def _init_config(self) -> None:
-        """Create default config file."""
-        config_path = self.vesi_dir / "config"
-        config = {"user": {"name": "", "email": ""}, "core": {"language": "id", "verbose": "false"}}
-        config_path.write_text(json.dumps(config, indent=2, ensure_ascii=False), encoding="utf-8")
+        """Create default config file using the ConfigManager."""
+        from vesi.config.manager import ConfigManager
+
+        config_mgr = ConfigManager(self.vesi_dir)
+        config_mgr.save_repo(config_mgr.template())
 
     def _create_default_ignore(self) -> None:
         """Create default .abaikan file."""
@@ -132,36 +133,40 @@ class Repository:
         return self.refs.get_branch_hash(branch)
 
     def get_config(self) -> dict[str, Any]:
-        """Read repository config."""
-        config_path = self.vesi_dir / "config"
-        if not config_path.is_file():
-            return {}
-        try:
-            return json.loads(config_path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            return {}
+        """Read repository config (flat key -> value format)."""
+        from vesi.config.manager import ConfigManager
+
+        config_mgr = ConfigManager(self.vesi_dir)
+        return config_mgr.get_all()
 
     def set_config_value(self, key: str, value: str) -> None:
         """Set a config value. Key format: 'section.key' (e.g., 'user.name')."""
-        config = self.get_config()
-        parts = key.split(".", 1)
-        if len(parts) == 2:
-            section, name = parts
-            if section not in config:
-                config[section] = {}
-            config[section][name] = value
-        else:
-            config[key] = value
+        from vesi.config.manager import ConfigManager
 
-        config_path = self.vesi_dir / "config"
-        config_path.write_text(
-            json.dumps(config, indent=2, ensure_ascii=False), encoding="utf-8"
-        )
+        config_mgr = ConfigManager(self.vesi_dir)
+        config_mgr.set(key, value)
+        self._migrate_legacy_config_file()
+
+    def _migrate_legacy_config_file(self) -> None:
+        """Convert legacy nested .vesi/config into flat config.json and remove old file."""
+        legacy_path = self.vesi_dir / "config"
+        if legacy_path.is_file():
+            try:
+                legacy_path.unlink()
+            except OSError:
+                pass
+
+    def get_config_value(self, key: str, default: Any = None) -> Any:
+        """Get a single config value by key, with schema-aware typing."""
+        from vesi.config.manager import ConfigManager
+
+        config_mgr = ConfigManager(self.vesi_dir)
+        return config_mgr.get(key, default)
 
     def get_author(self) -> str:
         """Get author name from config."""
         config = self.get_config()
-        name = config.get("user", {}).get("name", "")
+        name = config.get("user.name", "") or config.get("user", {}).get("name", "")
         if name:
             return name
         return os.environ.get("USER", os.environ.get("USERNAME", "unknown"))

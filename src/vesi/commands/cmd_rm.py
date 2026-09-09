@@ -26,6 +26,7 @@ def cmd_hapus_file(
       hapus file <file>          - Remove from tracking + delete file
       hapus file --cached <file> - Remove from tracking only (keep file)
       hapus file --force <file>  - Force remove
+      hapus file --dry-run <file> - Preview what would be removed
     """
     try:
         repo = Repository.find()
@@ -34,13 +35,30 @@ def cmd_hapus_file(
 
     args = parsed.args or []
     cached = "--cached" in parsed.flags
-    force = "--force" in parsed.flags
+    force = "--force" in parsed.flags or "-f" in parsed.flags
+    dry_run = "--dry-run" in parsed.flags
 
     if not args:
         raise VesiError(
             "Tentukan file yang akan dihapus.",
             hint="Contoh:\n  hapus file old.txt\n  hapus file --cached temp.log",
         )
+
+    if dry_run:
+        to_delete = []
+        for filepath in args:
+            if filepath.startswith("--"):
+                continue
+            file_path = repo.root / filepath
+            mode = "cached-only" if cached else "disk + tracking"
+            to_delete.append((filepath, mode, file_path.is_file()))
+        print_color("🔍 Dry-run: preview penghapusan file.", "cyan")
+        for filepath, mode, exists in to_delete:
+            exists_txt = "ada di disk" if exists else "tidak ada di disk"
+            print(f"  - {filepath}  [{mode}] [{exists_txt}]")
+        print(f"\n  {len(to_delete)} file akan diproses.")
+        print("  Jalankan tanpa --dry-run untuk menerapkan.")
+        return 0
 
     for filepath in args:
         if filepath.startswith("--"):

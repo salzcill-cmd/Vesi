@@ -19,7 +19,7 @@ from vesi.hashing import hash_content, short_hash
 # Pack file format constants
 PACK_SIGNATURE = b"VESIPACK"
 PACK_VERSION = 1
-PACK_HEADER_SIZE = 12  # 8 (sig) + 4 (version)
+PACK_HEADER_SIZE = 16  # 8 (sig) + 4 (version) + 4 (object count)
 OBJECT_HEADER_SIZE = 5  # 1 (type+size) + 4 (size continuation)
 
 
@@ -146,16 +146,15 @@ class PackWriter:
         for i in range(1, 256):
             fanout[i] += fanout[i - 1]
 
-        # Build offset table
+        # Build offset table - offsets must follow the order objects were
+        # written to the pack (insertion order, see create_pack).
         offsets = {}
         offset = PACK_HEADER_SIZE
-        for obj in sorted_objects:
-            # Calculate object size in pack
+        for obj in objects:
             obj_size = len(self._encode_object_header(obj))
             compressed = zlib.compress(obj.data, level=6)
-            total_size = obj_size + len(compressed)
             offsets[obj.hash_id] = offset
-            offset += total_size
+            offset += obj_size + len(compressed)
 
         # Write index file
         with open(idx_path, "wb") as f:
@@ -271,7 +270,7 @@ class PackReader:
             # Read hash table
             hashes = []
             for _ in range(num_objects):
-                hash_bytes = f.read(20)
+                hash_bytes = f.read(32)
                 hashes.append(hash_bytes.hex())
 
             # Read offset table

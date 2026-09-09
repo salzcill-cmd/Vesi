@@ -7,6 +7,66 @@ dan project ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 
 ## [Unreleased]
 
+### Added
+- **Exit code taxonomy** (PRD 53) - Setiap kesalahan dipetakan ke kode keluar yang bermakna:
+  - `0` sukses, `1` kesalahan umum, `2` penggunaan tidak valid
+  - `3` kesalahan repository, `4` konflik, `5` integritas, `6` pembatalan pengguna
+- **`--json` fungsional** (PRD 54) - Output terstruktur dan dapat dibaca mesin
+  - Keberhasilan: `{"success": true, "command": ..., "exit_code": 0, "output": ...}`
+  - Kesalahan: `{"error": true, "message": ..., "hint": ..., "exit_code": N}`
+- **Custom alias benar-benar dieksekusi** (PRD 56) - Alias yang dibuat via `alias tambah` kini dipakai saat mengetik perintah; alias tidak pernah menimpa perintah baku
+- **`alias tambah|hapus|list` di-parse sebagai subcommand** - Memperbaiki pemanggilan `alias tambah <nama> <cmd>`
+- **`simpan versi` menampilkan `Ukuran: X KB`**
+
+### Changed
+- `mulai proyek` pada repository yang sudah ada kini **warning** (bukan error), sesuai PRD 16.1
+- Status staging (PRD 16.2): file siap di-commit ditandai `.`, file yang masih punya perubahan unstaged ditandai `S`
+
+### Fixed
+- `--json` tidak lagi no-op; kini menghasilkan output JSON murni
+- Custom alias (ditulis ke `aliases.json`) sebelumnya tidak pernah dibaca oleh parser
+
+
+## [0.5.0] - 2026-09-09
+
+### Added
+- **Sistem Konfigurasi** (`konfigurasi`) - Atur preferensi tersimpan
+  - Lapisan prioritas: default → global → repository → environment (`VESI_*`)
+  - `vesi konfigurasi` - Lihat konfigurasi aktif
+  - `vesi konfigurasi --global` - Lihat/lakukan ulang konfigurasi global
+  - `vesi konfigurasi <kunci> <nilai>` - Tetapkan nilai
+  - `vesi konfigurasi hapus <kunci>` - Hapus nilai (kembali ke default)
+  - Kunci flat (misal `user.nama`) dengan validasi schema
+  - Migrasi otomatis file konfigurasi lama (`.vesi/config`) ke `.vesi/config.json`
+
+- **Tutorial Interaktif** (`belajar`) - Belajar vesi dengan melakukan
+  - `vesi belajar` - Lihat daftar pelajaran + progres
+  - `vesi belajar <judul>` - Mulai pelajaran interaktif
+  - `vesi belajar --reset` - Hapus progres belajar
+  - Alias: `learn`, `tutorial`, `bimbingan`
+  - 6 pelajaran: mulai, simpan, riwayat, cabang, gabungan, tags
+  - Sepenuhnya offline, tanpa dependensi eksternal
+
+- **Mode `--dry-run`** untuk perintah destruktif
+  - `balikkan <commit> --dry-run` - Preview commit pembalikan
+  - `hapus file <file> --dry-run` - Preview penghapusan file
+  - `batalkan perubahan <file> --dry-run` - Preview pembatalan perubahan
+  - `atur ulang <commit> --dry-run` - Preview reset (soft/mixed/hard)
+
+- **Unit Test Lapisan Penyimpanan** - Coverage storage layer (44 test baru)
+
+### Fixed
+- **Delta apply bug** - Semua operasi insert diabaikan karena salah cek bit (`cmd & OPS_DELTA_INSERT` selalu 0); offset copy juga salah baca. Sekarang `apply_delta` berfungsi benar.
+- **Pack index hash truncation** - Index pack menulis hash 32-byte (SHA-256) tetapi pembaca hanya mengambil 20-byte, menyebabkan lookup gagal.
+- **Pack header size mismatch** - `PACK_HEADER_SIZE` dideklarasikan 12 byte padahal aktual 16 (8 sig + 4 version + 4 count); offset pertama objek molor 4 byte.
+- **Pack offset calculation order** - Offset dihitung dalam urutan sorted, padahal objek ditulis dalam urutan insertion.
+
+### Changed
+- Perintah `konfigurasi` menggunakan format kunci flat dengan validasi schema
+- Output verbose command `balikkan` menampilkan daftar file yang dipulihkan/dihapus
+- **Logging terpusat** via `utils/logging_setup.py`; `--debug` mengaktifkan DEBUG level ke stderr
+- Plugin error dan hook error dicatat via `logging` bukan `print()`, menjaga log tetap bersih di mode normal
+
 ## [0.3.0] - 2026-08-22
 
 ### Added

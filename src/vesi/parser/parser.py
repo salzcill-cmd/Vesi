@@ -109,6 +109,10 @@ VERB_ALIASES: dict[str, str] = {
     "jelaskan": "jelaskan",
     "explain": "jelaskan",
     "apa": "jelaskan",
+    "belajar": "belajar",
+    "learn": "belajar",
+    "tutorial": "belajar",
+    "bimbingan": "belajar",
     "beri": "beri",
     "tag": "beri",
     "label": "beri",
@@ -554,6 +558,8 @@ def parse_command(input_text: str) -> ParsedCommand:
         _parse_bantuan(cmd, regular_tokens[1:])
     elif verb == "jelaskan":
         _parse_jelaskan(cmd, regular_tokens[1:])
+    elif verb == "belajar":
+        cmd.args = [t.value for t in regular_tokens[1:]]
     elif verb == "cek":
         _parse_cek(cmd, regular_tokens[1:])
     elif verb == "konfigurasi":
@@ -564,6 +570,8 @@ def parse_command(input_text: str) -> ParsedCommand:
         _parse_beri(cmd, regular_tokens[1:])
     elif verb == "isi":
         _parse_isi(cmd, regular_tokens[1:])
+    elif verb == "alias":
+        _parse_alias(cmd, regular_tokens[1:])
     elif verb == "cari":
         _parse_cari(cmd, regular_tokens[1:])
     elif verb == "susun":
@@ -844,6 +852,30 @@ def _parse_isi(cmd: ParsedCommand, tokens: list[Token]) -> None:
         else:
             cmd.args.append(tokens[i].value)
             i += 1
+
+
+def _parse_alias(cmd: ParsedCommand, tokens: list[Token]) -> None:
+    """Parse: alias [tambah|hapus|list] ..."""
+    if not tokens:
+        return
+
+    sub = tokens[0].value.lower()
+    sub_map = {
+        "tambah": "tambah",
+        "add": "tambah",
+        "set": "tambah",
+        "hapus": "hapus",
+        "remove": "hapus",
+        "rm": "hapus",
+        "del": "hapus",
+        "list": "list",
+        "ls": "list",
+    }
+    if sub in sub_map:
+        cmd.subcommand = sub_map[sub]
+        cmd.args = [t.value for t in tokens[1:]]
+    else:
+        cmd.args = [t.value for t in tokens]
 
 
 def _parse_cari(cmd: ParsedCommand, tokens: list[Token]) -> None:

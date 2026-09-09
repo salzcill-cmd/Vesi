@@ -91,10 +91,19 @@ def cmd_simpan_versi(
 
     # Display result
     file_count = len(new_tree.get_blob_entries())
+    total_bytes = sum(
+        len(repo.blobs.load_content(entry.hash_id))
+        for entry in new_tree.get_blob_entries()
+    )
+    size_kb = total_bytes / 1024
+    size_label = (
+        f"{total_bytes} B" if total_bytes < 1024 else f"{size_kb:.1f} KB"
+    )
     print_color("✓ Versi tersimpan!", "green")
     print(f"  ID: {short_hash(snapshot_hash)}")
     print(f"  Pesan: {message}")
     print(f"  File: {file_count} file disimpan")
+    print(f"  Ukuran: {size_label}")
 
     if verbose:
         print(f"  Author: {author}")

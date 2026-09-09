@@ -6,11 +6,14 @@ Monitors working directory for changes and auto-saves periodically.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import time
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Callable
+
+logger = logging.getLogger("vesi.watch")
 
 
 @dataclass
@@ -302,5 +305,5 @@ class AutoSaveManager:
             return True
 
         except Exception as e:
-            print(f"Auto-save error: {e}")
+            logger.error("Auto-save error: %s", e)
             return False

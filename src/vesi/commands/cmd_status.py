@@ -54,9 +54,22 @@ def cmd_lihat_perubahan(
     if staged_files:
         if changes:
             print()
+        # PRD 16.2: a staged file whose working content matches the staged
+        # (index) hash is ready to commit and marked '.', otherwise 'S' (it
+        # also has unstaged changes).
+        from vesi.hashing import hash_file
+
         print("File yang disiapkan (staged):")
         for f in sorted(staged_files):
-            print(f"  S {f}")
+            ready = False
+            working_path = repo.root / f
+            if working_path.is_file():
+                try:
+                    ready = hash_file(working_path) == index.get(f)
+                except (OSError, PermissionError):
+                    ready = False
+            marker = "." if ready else "S"
+            print(f"  {marker} {f}")
 
     if verbose:
         head = repo.refs.get_head()

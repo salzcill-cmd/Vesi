@@ -21,6 +21,7 @@ from vesi.commands.cmd_check import cmd_cek
 from vesi.commands.cmd_config import cmd_konfigurasi
 from vesi.commands.cmd_help import cmd_bantuan
 from vesi.commands.cmd_explain import cmd_jelaskan
+from vesi.commands.cmd_belajar import cmd_belajar
 from vesi.commands.cmd_tag import cmd_beri_tag, cmd_lihat_tag, cmd_hapus_tag
 from vesi.commands.cmd_show import cmd_isi
 from vesi.commands.cmd_search import cmd_cari
@@ -668,6 +669,7 @@ COMMANDS: dict[str, callable] = {
     "konfigurasi": cmd_konfigurasi,
     "bantuan": cmd_bantuan,
     "jelaskan": cmd_jelaskan,
+    "belajar": cmd_belajar,
     "gabungkan": cmd_gabungkan,
     "beri": cmd_beri,
     "isi": cmd_isi,

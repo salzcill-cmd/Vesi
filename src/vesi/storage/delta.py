@@ -90,24 +90,20 @@ def apply_delta(base: bytes, delta: bytes) -> bytes:
         cmd = delta[pos]
         pos += 1
 
-        if cmd & OPS_DELTA_INSERT:
-            # Insert from delta stream
-            size, pos = _decode_size(delta, pos)
-            result.extend(delta[pos:pos + size])
-            pos += size
-        else:
+        if cmd & OPS_DELTA_COPY:
             # Copy from base
-            # Parse offset encoding
-            offset = 0
-            for bit in range(4):
-                if cmd & (1 << bit):
-                    offset |= delta[pos] << (bit * 8)
-                    pos += 1
+            offset = int.from_bytes(delta[pos:pos + 4], byteorder="little")
+            pos += 4
 
             # Parse size
             size, pos = _decode_size(delta, pos)
 
             result.extend(base[offset:offset + size])
+        else:
+            # Insert from delta stream
+            size, pos = _decode_size(delta, pos)
+            result.extend(delta[pos:pos + size])
+            pos += size
 
     if len(result) != target_size:
         raise ValueError(f"Target size mismatch: expected {target_size}, got {len(result)}")

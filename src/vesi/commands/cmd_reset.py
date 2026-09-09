@@ -81,6 +81,7 @@ def cmd_atur_ulang(
       atur ulang <commit>           - Soft reset to commit
       atur ulang --mixed <commit>   - Mixed reset
       atur ulang --hard <commit>    - Hard reset (discards changes!)
+      atur ulang --dry-run <commit> - Preview without changing anything
       atur ulang HEAD~1             - Undo last commit (soft)
       atur ulang HEAD~3             - Undo last 3 commits
     """
@@ -93,6 +94,7 @@ def cmd_atur_ulang(
     soft = "--soft" in parsed.flags
     mixed = "--mixed" in parsed.flags
     hard = "--hard" in parsed.flags
+    dry_run = "--dry-run" in parsed.flags
 
     # Default to soft if no mode specified
     if not soft and not mixed and not hard:
@@ -137,6 +139,36 @@ def cmd_atur_ulang(
         current_message = current_data.get("message", "")
     except (FileNotFoundError, ValueError):
         current_message = ""
+
+    # Compute affected files for a meaningful preview
+    try:
+        target_tree = snapshot_mgr.get_tree(target_hash)
+        current_tree = snapshot_mgr.get_tree(current_hash)
+        current_files = {e.path for e in current_tree.get_blob_entries()}
+        target_files = {e.path for e in target_tree.get_blob_entries()}
+        added = sorted(target_files - current_files)
+        removed = sorted(current_files - target_files)
+    except Exception:
+        added = removed = []
+
+    if dry_run:
+        mode_label = {"--soft": "soft", "--mixed": "mixed", "--hard": "hard"}.get(
+            "--hard" if hard else "--mixed" if mixed else "--soft", "soft"
+        )
+        print_color("🔍 Dry-run: preview reset.", "cyan")
+        print(f"  Mode: {mode_label}")
+        print(f"  Dari: {short_hash(current_hash)} ({current_message})")
+        print(f"  Ke:   {short_hash(target_hash)} ({target_message})")
+        if added:
+            print(f"\n  File yang akan muncul ({len(added)}):")
+            for f in added[:20]:
+                print(f"    + {f}")
+        if removed:
+            print(f"\n  File yang akan hilang/tidak ada di target ({len(removed)}):")
+            for f in removed[:20]:
+                print(f"    - {f}")
+        print("\n  Jalankan tanpa --dry-run untuk menerapkan.")
+        return 0
 
     # Hard reset warning
     if hard:

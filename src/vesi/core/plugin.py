@@ -7,10 +7,13 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import logging
 import sys
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Any, Callable
+
+logger = logging.getLogger("vesi.plugins")
 
 
 @dataclass
@@ -115,7 +118,7 @@ class PluginManager:
             return False
 
         except Exception as e:
-            print(f"Error loading plugin '{name}': {e}")
+            logger.warning("Error loading plugin '%s': %s", name, e)
             return False
 
     def unload_plugin(self, name: str) -> bool:
@@ -200,7 +203,7 @@ class PluginManager:
                 result = hook_func(*args, **kwargs)
                 results.append(result)
             except Exception as e:
-                print(f"Hook '{hook_name}' error: {e}")
+                logger.warning("Hook '%s' error: %s", hook_name, e)
 
         return results
 

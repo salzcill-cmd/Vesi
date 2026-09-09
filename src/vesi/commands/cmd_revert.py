@@ -76,6 +76,7 @@ def cmd_balikkan(
     Usage:
       balikkan <commit>           - Revert a specific commit
       balikkan <commit> --no-commit - Apply changes without committing
+      balikkan <commit> --dry-run - Preview what would change
       balikkan HEAD               - Revert last commit
     """
     try:
@@ -91,6 +92,12 @@ def cmd_balikkan(
 
     commit_str = parsed.args[0]
     no_commit = "--no-commit" in parsed.flags
+    dry_run = "--dry-run" in parsed.flags
+
+    if no_commit and dry_run:
+        raise VesiError(
+            "Gunakan salah satu: --no-commit atau --dry-run, tidak keduanya.",
+        )
 
     # Resolve commit
     try:
@@ -131,6 +138,29 @@ def cmd_balikkan(
     new_tree = Tree()
     for entry in parent_tree.get_blob_entries():
         new_tree.add_blob(entry.name, entry.hash_id, entry.path)
+
+    revert_files = {e.path for e in revert_tree.get_blob_entries()}
+    parent_files = {e.path for e in parent_tree.get_blob_entries()}
+    restored = sorted(parent_files - revert_files)
+    removed = sorted(revert_files - parent_files)
+
+    if dry_run:
+        print_color("🔍 Dry-run: preview pembalikan commit.", "cyan")
+        print(f"  Commit: {short_hash(commit_hash)} ({commit_message})")
+        print(f"  Pesan reversal: Balikkan: {commit_message}")
+        print()
+        if restored:
+            print(f"  File yang akan dipulihkan/diubah ({len(restored)}):")
+            for f in restored:
+                print(f"    + {f}")
+        if removed:
+            print(f"  File yang akan dihapus ({len(removed)}):")
+            for f in removed:
+                print(f"    - {f}")
+        if not restored and not removed:
+            print("  Tidak ada perubahan yang akan dibatalkan.")
+        print("\n  Jalankan tanpa --dry-run untuk menerapkan.")
+        return 0
 
     if no_commit:
         # Apply changes to working directory without committing
@@ -181,16 +211,9 @@ def cmd_balikkan(
     print(f"  Commit baru: {short_hash(new_hash)} ({revert_message})")
 
     if verbose:
-        # Show what files changed
-        revert_files = {e.path for e in revert_tree.get_blob_entries()}
-        parent_files = {e.path for e in parent_tree.get_blob_entries()}
-
-        added = parent_files - revert_files
-        removed = revert_files - parent_files
-
-        if added:
+        if restored:
             print(f"\n  File yang dipulihkan:")
-            for f in added:
+            for f in restored:
                 print(f"    + {f}")
         if removed:
             print(f"\n  File yang dihapus:")
